@@ -158,6 +158,31 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .month-name{font-size:12px;font-weight:700}
 .month-cnt{font-size:10px;color:var(--text3);font-weight:600}
 
+/* ── RELEASES ── */
+.releases-month{margin-bottom:28px}
+.releases-month-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.releases-month-name{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.releases-month-count{font-size:11px;color:var(--text3);font-weight:500}
+.releases-month-line{flex:1;height:1px;background:var(--border)}
+.release-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;margin-bottom:8px;cursor:pointer;transition:all .12s}
+.release-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.release-cover{width:52px;height:70px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+.release-cover-ph{width:52px;height:70px;border-radius:6px;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--border2)}
+.release-info{flex:1;min-width:0}
+.release-title{font-size:14px;font-weight:700;letter-spacing:-.3px;margin-bottom:3px}
+.release-meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.release-date-row{display:flex;align-items:center;gap:8px}
+.release-date{font-size:13px;font-weight:700;color:var(--text)}
+.release-countdown{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+.release-countdown.soon{background:#FEF3C7;color:#92400E}
+.release-countdown.today{background:#DCFCE7;color:#166534}
+.release-countdown.past{background:var(--bg3);color:var(--text3)}
+.release-countdown.far{background:#EFF6FF;color:#1E40AF}
+.releases-empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.releases-empty-icon{font-size:32px;margin-bottom:8px;opacity:.5}
+.releases-empty-text{font-size:13px;line-height:1.6}
+.releases-section-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;margin-top:24px}
+
 /* ── PANEL ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:none;align-items:flex-end;justify-content:center}
 .overlay.on{display:flex}
@@ -277,6 +302,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <span class="nav-badge" id="badge-done">0</span>
       </button>
       <div class="nav-section-label" style="margin-top:8px">Aperçu</div>
+      <button class="nav-item" data-view="releases" onclick="switchView('releases',this)">
+        <span class="nav-icon">🗓</span> Sorties
+        <span class="nav-badge" id="badge-releases">0</span>
+      </button>
       <button class="nav-item" data-view="calendar" onclick="switchView('calendar',this)">
         <span class="nav-icon">📅</span> Calendrier
       </button>
@@ -286,6 +315,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     </nav>
     <div class="sidebar-footer">
       <button class="add-btn" onclick="openModal(null)">＋ Ajouter un jeu</button>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="exportData()">↓ Exporter</button>
+        <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="document.getElementById('importFile').click()">↑ Importer</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </aside>
 
@@ -315,6 +349,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div class="view" id="view-doing"><div id="doingContent"></div></div>
       <div class="view" id="view-done"><div id="doneContent"></div></div>
       <div class="view" id="view-calendar"><div id="calContent"></div></div>
+      <div class="view" id="view-releases"><div id="releasesContent"></div></div>
       <div class="view" id="view-stats"><div id="statsContent"></div></div>
     </div>
   </main>
@@ -325,6 +360,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <button class="mnav-item on" data-view="library" onclick="switchView('library',this)"><span class="mnav-icon">🎮</span><span class="mnav-label">Jeux</span></button>
   <button class="mnav-item" data-view="backlog" onclick="switchView('backlog',this)"><span class="mnav-icon">📋</span><span class="mnav-label">Backlog</span></button>
   <button class="mnav-item" data-view="doing" onclick="switchView('doing',this)"><span class="mnav-icon">▶</span><span class="mnav-label">En cours</span></button>
+  <button class="mnav-item" data-view="releases" onclick="switchView('releases',this)"><span class="mnav-icon">🗓</span><span class="mnav-label">Sorties</span></button>
   <button class="mnav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="mnav-icon">📅</span><span class="mnav-label">Calendrier</span></button>
   <button class="mnav-item" data-view="stats" onclick="switchView('stats',this)"><span class="mnav-icon">📊</span><span class="mnav-label">Stats</span></button>
 </nav>
@@ -547,7 +583,7 @@ function colorShade(hex, idx, total){
 }
 
 // ─── VIEWS ───
-const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',calendar:'Calendrier',stats:'Statistiques'};
+const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',releases:'Prochaines sorties',calendar:'Calendrier',stats:'Statistiques'};
 function switchView(v,btn){
   currentView=v;
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -563,6 +599,7 @@ function renderCurrent(){
   else if(currentView==='backlog') renderStatusView('backlog','todo');
   else if(currentView==='doing') renderStatusView('doing','doing');
   else if(currentView==='done') renderStatusView('done','done');
+  else if(currentView==='releases') renderReleases();
   else if(currentView==='calendar') renderCalendar();
   else if(currentView==='stats') renderStats();
   updateBadges();
@@ -572,6 +609,8 @@ function updateBadges(){
   document.getElementById('badge-backlog').textContent=games.filter(g=>g.status==='todo').length;
   document.getElementById('badge-doing').textContent=games.filter(g=>g.status==='doing').length;
   document.getElementById('badge-done').textContent=games.filter(g=>g.status==='done').length;
+  const todayStr=today();
+  document.getElementById('badge-releases').textContent=games.filter(g=>g.release&&g.release>=todayStr).length;
 }
 
 // ─── FILTERS ───
@@ -882,6 +921,95 @@ function saveGame(){
   save(); closeModal(); renderCurrent();
 }
 
+// ─── RELEASES ───
+function renderReleases(){
+  const todayStr=today();
+  const todayDate=new Date(todayStr+'T12:00:00');
+
+  // Split: upcoming (release >= today) and recent (release in past 30 days, not yet started)
+  const upcoming=games.filter(g=>g.release&&g.release>=todayStr).sort((a,b)=>a.release.localeCompare(b.release));
+  const recentCutoff=new Date(todayDate); recentCutoff.setDate(recentCutoff.getDate()-60);
+  const recentStr=recentCutoff.toISOString().split('T')[0];
+  const recent=games.filter(g=>g.release&&g.release<todayStr&&g.release>=recentStr).sort((a,b)=>b.release.localeCompare(a.release));
+
+  function daysDiff(d){
+    const dt=new Date(d+'T12:00:00');
+    return Math.round((dt-todayDate)/(86400000));
+  }
+  function countdownHTML(d){
+    const diff=daysDiff(d);
+    if(diff===0) return '<span class="release-countdown today">Aujourd\'hui !</span>';
+    if(diff===1) return '<span class="release-countdown soon">Demain</span>';
+    if(diff>0&&diff<=14) return `<span class="release-countdown soon">Dans ${diff} jours</span>`;
+    if(diff>14&&diff<=60) return `<span class="release-countdown far">Dans ${Math.ceil(diff/7)} semaines</span>`;
+    if(diff>60) return `<span class="release-countdown far">Dans ${Math.round(diff/30)} mois</span>`;
+    if(diff>=-7) return `<span class="release-countdown past">Il y a ${Math.abs(diff)} jours</span>`;
+    return `<span class="release-countdown past">Sorti</span>`;
+  }
+  function releaseCardHTML(g){
+    const M=makerOf(g);
+    return `<div class="release-card" onclick="openPanel('${g.id}')" style="border-left:4px solid ${M.color}">
+      ${g.cover?`<img class="release-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=release-cover-ph>🎮</div>'">`:`<div class="release-cover-ph">🎮</div>`}
+      <div class="release-info">
+        <div class="release-title">${esc(g.title)}</div>
+        <div class="release-meta">
+          <span>${esc(g.console||'')}</span>
+          ${g.studio?`<span>${esc(g.studio)}</span>`:''}
+          ${g.genre?`<span>${esc(g.genre)}</span>`:''}
+        </div>
+        <div class="release-date-row">
+          <div class="release-date">${fmt(g.release)}</div>
+          ${countdownHTML(g.release)}
+        </div>
+        ${g.status==='todo'?'<div style="margin-top:4px"><span class="status-badge todo">Dans le backlog</span></div>':''}
+      </div>
+    </div>`;
+  }
+
+  let html='';
+
+  if(!upcoming.length&&!recent.length){
+    html=`<div class="releases-empty">
+      <div class="releases-empty-icon">🗓</div>
+      <div class="releases-empty-text">Aucune sortie prévue.<br>Ajoute un jeu avec une date de sortie future !</div>
+      <button class="empty-cta" onclick="openModal(null)" style="margin-top:14px">Ajouter un jeu</button>
+    </div>`;
+    document.getElementById('releasesContent').innerHTML=html;
+    return;
+  }
+
+  // Upcoming grouped by month
+  if(upcoming.length){
+    const groups={};
+    upcoming.forEach(g=>{
+      const ym=g.release.slice(0,7);
+      if(!groups[ym]) groups[ym]=[];
+      groups[ym].push(g);
+    });
+    Object.keys(groups).sort().forEach(ym=>{
+      const[yr,mo]=ym.split('-');
+      const monthName=MONTHS[parseInt(mo)-1]+' '+yr;
+      const list=groups[ym];
+      html+=`<div class="releases-month">
+        <div class="releases-month-head">
+          <div class="releases-month-name">${monthName}</div>
+          <div class="releases-month-count">${list.length} jeu${list.length>1?'x':''}</div>
+          <div class="releases-month-line"></div>
+        </div>
+        ${list.map(g=>releaseCardHTML(g)).join('')}
+      </div>`;
+    });
+  }
+
+  // Recent releases
+  if(recent.length){
+    html+=`<div class="releases-section-label">Sorties récentes</div>`;
+    html+=recent.map(g=>releaseCardHTML(g)).join('');
+  }
+
+  document.getElementById('releasesContent').innerHTML=html;
+}
+
 // ─── CALENDAR ───
 function renderCalendar(){
   const y=String(calYear);
@@ -1148,7 +1276,51 @@ function renderStats(){
   <div class="section-title">Par constructeur & console</div>
   ${makerBlocks||'<div class="empty-sub" style="color:var(--text3);font-size:12px">Aucune donnée pour le moment.</div>'}
   ${genres.length?`<div class="section-title" style="margin-top:20px">Genres</div><div class="genre-chips">${genres.map(g=>`<div class="genre-chip">${esc(g)}</div>`).join('')}</div>`:''}
+  <div class="section-title" style="margin-top:28px">Données</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="exportData()">↓ Exporter mes données</button>
+    <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">↑ Importer un fichier</button>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:6px">Exporte un fichier JSON pour sauvegarder ou transférer ta bibliothèque sur un autre appareil.</div>
   `;
+}
+
+// ─── EXPORT / IMPORT ───
+function exportData(){
+  const blob=new Blob([JSON.stringify(games,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`gamelog-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(e){
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data)){ alert('Fichier invalide.'); return; }
+      const mode=games.length?confirm(`Tu as déjà ${games.length} jeux.\n\nOK = Fusionner (ajouter les nouveaux sans doublons)\nAnnuler = Tout remplacer`):false;
+      if(mode){
+        // Merge: add games whose id doesn't exist yet
+        const existingIds=new Set(games.map(g=>g.id));
+        let added=0;
+        data.forEach(g=>{
+          if(!existingIds.has(g.id)){ games.push(g); added++; }
+        });
+        alert(`${added} jeu${added>1?'x':''} ajouté${added>1?'s':''}.`);
+      } else {
+        games=data;
+        alert(`${data.length} jeu${data.length>1?'x':''} importé${data.length>1?'s':''}.`);
+      }
+      save(); renderCurrent();
+    }catch{ alert('Erreur de lecture du fichier.'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
 }
 
 // ─── OVERLAY / SWIPE / KEYBOARD ───
