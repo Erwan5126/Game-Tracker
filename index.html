@@ -104,12 +104,41 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
 
 /* ── STATS ── */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
-.stat-val{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
-.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px;font-weight:500}
-.stat-sub{font-size:10px;color:var(--text3);margin-top:1px}
-.section-title{font-size:13px;font-weight:700;margin-bottom:10px;letter-spacing:-.2px}
+.stats-hero{display:flex;gap:20px;align-items:center;margin-bottom:28px;flex-wrap:wrap}
+.stats-donut{position:relative;width:140px;height:140px;flex-shrink:0}
+.stats-donut svg{transform:rotate(-90deg)}
+.stats-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stats-donut-num{font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.stats-donut-lbl{font-size:10px;color:var(--text3);font-weight:500;margin-top:2px}
+.stats-hero-right{flex:1;min-width:200px}
+.stats-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-mini{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.stat-mini-val{font-size:22px;font-weight:800;letter-spacing:-1px;line-height:1}
+.stat-mini-lbl{font-size:10px;color:var(--text3);font-weight:500;margin-top:3px}
+.stat-mini-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden}
+.stat-mini-bar-fill{height:100%;border-radius:2px;transition:width .6s}
+.section-title{font-size:13px;font-weight:700;margin-bottom:12px;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Top games */
+.top-games{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
+.top-game{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .12s}
+.top-game:hover{box-shadow:var(--shadow-md)}
+.top-game-rank{font-size:16px;font-weight:800;color:var(--border2);width:22px;text-align:center;flex-shrink:0}
+.top-game-rank.gold{color:#F59E0B}
+.top-game-rank.silver{color:#9CA3AF}
+.top-game-rank.bronze{color:#B45309}
+.top-game-cover{width:36px;height:48px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+.top-game-cover-ph{width:36px;height:48px;border-radius:5px;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--border2)}
+.top-game-info{flex:1;min-width:0}
+.top-game-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-game-meta{font-size:10px;color:var(--text3);margin-top:1px}
+.top-game-val{font-size:14px;font-weight:800;flex-shrink:0;letter-spacing:-.5px}
+.top-game-stars{display:flex;gap:1px;flex-shrink:0}
+.top-game-star{font-size:12px;color:#E5E4E0}
+.top-game-star.on{color:var(--accent)}
+
+/* Maker blocks */
 .maker-stat-block{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
 .maker-stat-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .maker-stat-name{font-size:13px;font-weight:700}
@@ -119,8 +148,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .console-bar-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .console-bar-fill{height:100%;border-radius:3px;transition:width .5s}
 .console-bar-count{font-size:11px;color:var(--text3);width:22px;text-align:right;flex-shrink:0}
-.genre-chips{display:flex;gap:6px;flex-wrap:wrap}
-.genre-chip{padding:4px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text2)}
+
+/* Genre bars */
+.genre-bars{display:flex;flex-direction:column;gap:6px;margin-bottom:28px}
+.genre-bar-row{display:flex;align-items:center;gap:10px}
+.genre-bar-name{font-size:11px;font-weight:600;color:var(--text2);width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.genre-bar-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.genre-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.genre-bar-count{font-size:11px;color:var(--text3);width:22px;text-align:right;flex-shrink:0}
+
+.stats-export{margin-top:32px;padding-top:20px;border-top:1px solid var(--border)}
 
 /* ── GAME BARS IN MONTHS ── */
 .month-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;position:relative}
@@ -544,7 +581,7 @@ let games = (() => {
     return [];
   }catch{ return []; }
 })();
-let currentView='library', makerFilter='all', statusFilter='all', panelId=null, modalRating=0, calYear=new Date().getFullYear();
+let currentView='library', makerFilter='all', statusFilter='all', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
 
 function save(){ localStorage.setItem(LS,JSON.stringify(games)); }
 function today(){ return new Date().toISOString().split('T')[0]; }
@@ -1217,27 +1254,91 @@ function showTip(e,ds){
 function hideTip(){ document.getElementById('tooltip').style.display='none'; }
 
 // ─── STATS ───
+function setStatsYear(y){ statsYear=y; renderStats(); }
+function gameActiveInYear(g, yr){
+  if(!yr) return true; // all time
+  const ys=yr+'-01-01', ye=yr+'-12-31', todayStr=today();
+  return getSessions(g).some(s=>{
+    const gs=s.start||s.end||'';
+    const ge=s.end||(g.status==='doing'&&!s.end?todayStr:s.start)||'';
+    return gs&&gs<=ye&&ge>=ys;
+  });
+}
 function renderStats(){
-  const total=games.length;
-  const done=games.filter(g=>g.status==='done').length;
-  const doing=games.filter(g=>g.status==='doing').length;
-  const totalHours=games.reduce((s,g)=>s+(g.hours||0),0);
-  const rated=games.filter(g=>g.rating);
-  const avgRating=rated.length?(rated.reduce((s,g)=>s+g.rating,0)/rated.length).toFixed(1):'—';
-  const genres=[...new Set(games.map(g=>g.genre).filter(Boolean))].slice(0,20);
+  // Available years
+  const allYears=new Set();
+  allYears.add(String(new Date().getFullYear()));
+  games.forEach(g=>getSessions(g).forEach(s=>{
+    if(s.start) allYears.add(s.start.slice(0,4));
+    if(s.end) allYears.add(s.end.slice(0,4));
+  }));
+  const years=[...allYears].sort((a,b)=>b-a);
+  const sy=statsYear; // null=all
 
-  // Per maker -> per console
+  // Filter games by year
+  const fg=games.filter(g=>gameActiveInYear(g, sy));
+  const total=fg.length;
+  const done=fg.filter(g=>g.status==='done').length;
+  const doing=fg.filter(g=>g.status==='doing').length;
+  const backlog=fg.filter(g=>g.status==='todo').length;
+  const totalHours=fg.reduce((s,g)=>s+(g.hours||0),0);
+  const rated=fg.filter(g=>g.rating);
+  const avgRating=rated.length?(rated.reduce((s,g)=>s+g.rating,0)/rated.length).toFixed(1):'—';
+
+  // Donut
+  const r=54, stroke=14, circ=2*Math.PI*r;
+  const pDone=total?done/total:0, pDoing=total?doing/total:0, pTodo=total?backlog/total:0;
+  const seg1=pDone*circ, seg2=pDoing*circ, seg3=pTodo*circ;
+  const donutSVG=`<svg viewBox="0 0 140 140" width="140" height="140">
+    <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--bg3)" stroke-width="${stroke}"/>
+    ${total?`<circle cx="70" cy="70" r="${r}" fill="none" stroke="#15803D" stroke-width="${stroke}" stroke-dasharray="${seg1} ${circ-seg1}" stroke-linecap="round"/>
+    <circle cx="70" cy="70" r="${r}" fill="none" stroke="#C2410C" stroke-width="${stroke}" stroke-dasharray="${seg2} ${circ-seg2}" stroke-dashoffset="${-seg1}" stroke-linecap="round"/>
+    <circle cx="70" cy="70" r="${r}" fill="none" stroke="#D1D5DB" stroke-width="${stroke}" stroke-dasharray="${seg3} ${circ-seg3}" stroke-dashoffset="${-(seg1+seg2)}" stroke-linecap="round"/>`:''}
+  </svg>`;
+
+  // Top rated (max 5)
+  const topRated=[...fg].filter(g=>g.rating).sort((a,b)=>b.rating-a.rating||(b.hours||0)-(a.hours||0)).slice(0,5);
+  // Most played (max 5)
+  const topPlayed=[...fg].filter(g=>g.hours).sort((a,b)=>b.hours-a.hours).slice(0,5);
+  // Recent completions (max 5)
+  const recentDone=[...fg].filter(g=>g.status==='done').sort((a,b)=>{
+    const da=lastSession(a), db=lastSession(b);
+    return (db?.end||'').localeCompare(da?.end||'');
+  }).slice(0,5);
+
+  // Genres
+  const genreCounts={};
+  fg.forEach(g=>{ if(g.genre){ g.genre.split(',').forEach(t=>{ const k=t.trim(); if(k){ genreCounts[k]=(genreCounts[k]||0)+1; } }); } });
+  const genresSorted=Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxGenre=genresSorted.length?genresSorted[0][1]:1;
+  const genreColors=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#6A4C93','#1D3557','#6B7280'];
+
+  function topGameHTML(g, rank, valHTML){
+    const rankClass=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+    return `<div class="top-game" onclick="openPanel('${g.id}')">
+      <div class="top-game-rank ${rankClass}">${rank}</div>
+      ${g.cover?`<img class="top-game-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=top-game-cover-ph>🎮</div>'">`:`<div class="top-game-cover-ph">🎮</div>`}
+      <div class="top-game-info">
+        <div class="top-game-title">${esc(g.title)}</div>
+        <div class="top-game-meta">${esc(g.console||'')}${g.studio?' · '+esc(g.studio):''}</div>
+      </div>
+      ${valHTML}
+    </div>`;
+  }
+  function starsHTML(r){
+    let h='<div class="top-game-stars">';
+    for(let i=1;i<=5;i++) h+=`<span class="top-game-star ${i<=r?'on':''}">★</span>`;
+    return h+'</div>';
+  }
+
+  // Makers
   let makerBlocks='';
   MAKER_ORDER.forEach(mk=>{
     const M=MAKERS[mk];
-    const makerGames=games.filter(g=>g.maker===mk);
+    const makerGames=fg.filter(g=>g.maker===mk);
     if(!makerGames.length) return;
     const byConsole={};
-    makerGames.forEach(g=>{
-      const c=g.console||'Autre';
-      if(!byConsole[c]) byConsole[c]=0;
-      byConsole[c]++;
-    });
+    makerGames.forEach(g=>{ const c=g.console||'Autre'; byConsole[c]=(byConsole[c]||0)+1; });
     const maxC=Math.max(...Object.values(byConsole));
     const cOrder=[...M.consoles.filter(c=>byConsole[c]),...Object.keys(byConsole).filter(c=>!M.consoles.includes(c))];
     makerBlocks+=`<div class="maker-stat-block">
@@ -1246,8 +1347,7 @@ function renderStats(){
         <div class="maker-stat-name">${M.label}</div>
         <div class="maker-stat-total">${makerGames.length} jeu${makerGames.length>1?'x':''} · ${makerGames.reduce((s,g)=>s+(g.hours||0),0)}h</div>
       </div>
-      ${cOrder.map(c=>`
-      <div class="console-bar-row">
+      ${cOrder.map(c=>`<div class="console-bar-row">
         <div class="console-bar-name">${esc(c)}</div>
         <div class="console-bar-track"><div class="console-bar-fill" style="width:${byConsole[c]/maxC*100}%;background:${M.color}"></div></div>
         <div class="console-bar-count">${byConsole[c]}</div>
@@ -1256,23 +1356,84 @@ function renderStats(){
   });
 
   document.getElementById('statsContent').innerHTML=`
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Jeux au total</div></div>
-    <div class="stat-card"><div class="stat-val">${done}</div><div class="stat-lbl">Terminés</div><div class="stat-sub">${total?Math.round(done/total*100):0}% de la bibliothèque</div></div>
-    <div class="stat-card"><div class="stat-val">${doing}</div><div class="stat-lbl">En cours</div></div>
-    <div class="stat-card"><div class="stat-val">${totalHours>0?totalHours+'h':'—'}</div><div class="stat-lbl">Heures totales</div></div>
-    <div class="stat-card"><div class="stat-val">${avgRating}</div><div class="stat-lbl">Note moyenne</div></div>
-    <div class="stat-card"><div class="stat-val">${games.filter(g=>g.status==='todo').length}</div><div class="stat-lbl">Dans le backlog</div></div>
+  <!-- YEAR SELECTOR -->
+  <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+    <button class="filter-chip ${!sy?'on':''}" onclick="setStatsYear(null)">Tout</button>
+    ${years.map(y=>`<button class="filter-chip ${sy===y?'on':''}" onclick="setStatsYear('${y}')">${y}</button>`).join('')}
   </div>
+
+  <!-- HERO -->
+  <div class="stats-hero">
+    <div class="stats-donut">
+      ${donutSVG}
+      <div class="stats-donut-center">
+        <div class="stats-donut-num">${total?Math.round(pDone*100):'0'}%</div>
+        <div class="stats-donut-lbl">complétés</div>
+      </div>
+    </div>
+    <div class="stats-hero-right">
+      <div class="stats-hero-grid">
+        <div class="stat-mini">
+          <div class="stat-mini-val">${total}</div>
+          <div class="stat-mini-lbl">Jeux${sy?' en '+sy:''}</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-val" style="color:#15803D">${done}</div>
+          <div class="stat-mini-lbl">Terminés</div>
+          <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?done/total*100:0}%;background:#15803D"></div></div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-val" style="color:#C2410C">${doing}</div>
+          <div class="stat-mini-lbl">En cours</div>
+          <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?doing/total*100:0}%;background:#C2410C"></div></div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-val">${totalHours>0?totalHours+'h':'—'}</div>
+          <div class="stat-mini-lbl">Heures jouées</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-val" style="color:var(--accent)">${avgRating}</div>
+          <div class="stat-mini-lbl">Note moyenne</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-val">${backlog}</div>
+          <div class="stat-mini-lbl">Backlog</div>
+          <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?backlog/total*100:0}%;background:var(--border2)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  ${topRated.length?`<div class="section-title">Mieux notés</div>
+  <div class="top-games">${topRated.map((g,i)=>topGameHTML(g,i+1,starsHTML(g.rating))).join('')}</div>`:''}
+
+  ${topPlayed.length?`<div class="section-title">Plus joués</div>
+  <div class="top-games">${topPlayed.map((g,i)=>topGameHTML(g,i+1,`<div class="top-game-val">${g.hours}h</div>`)).join('')}</div>`:''}
+
+  ${recentDone.length?`<div class="section-title">Derniers terminés</div>
+  <div class="top-games">${recentDone.map((g,i)=>{
+    const ls=lastSession(g); const dateStr=ls&&ls.end?fmt(ls.end):'';
+    return topGameHTML(g,i+1,`<div style="font-size:11px;color:var(--text3);flex-shrink:0">${dateStr}</div>`);
+  }).join('')}</div>`:''}
+
+  ${genresSorted.length?`<div class="section-title">Genres</div>
+  <div class="genre-bars">${genresSorted.map(([name,count],i)=>`<div class="genre-bar-row">
+    <div class="genre-bar-name">${esc(name)}</div>
+    <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${count/maxGenre*100}%;background:${genreColors[i%genreColors.length]}"></div></div>
+    <div class="genre-bar-count">${count}</div>
+  </div>`).join('')}</div>`:''}
+
   <div class="section-title">Par constructeur & console</div>
-  ${makerBlocks||'<div class="empty-sub" style="color:var(--text3);font-size:12px">Aucune donnée pour le moment.</div>'}
-  ${genres.length?`<div class="section-title" style="margin-top:20px">Genres</div><div class="genre-chips">${genres.map(g=>`<div class="genre-chip">${esc(g)}</div>`).join('')}</div>`:''}
-  <div class="section-title" style="margin-top:28px">Données</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="exportData()">↓ Exporter mes données</button>
-    <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">↑ Importer un fichier</button>
+  ${makerBlocks||'<div style="color:var(--text3);font-size:12px;margin-bottom:20px">Aucune donnée.</div>'}
+
+  <div class="stats-export">
+    <div class="section-title">Données</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="exportData()">↓ Exporter mes données</button>
+      <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">↑ Importer un fichier</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">Exporte un fichier JSON pour sauvegarder ou transférer ta bibliothèque.</div>
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-top:6px">Exporte un fichier JSON pour sauvegarder ou transférer ta bibliothèque sur un autre appareil.</div>
   `;
 }
 
