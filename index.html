@@ -951,6 +951,18 @@ function renderCalendar(){
   </div>
   <div class="month-grid">`;
 
+  // Assign shade index per game globally (same shade across all months)
+  const globalMakerIdx={};
+  const globalGameShade={};
+  games.forEach(g=>{
+    const mk=g.maker||'other';
+    if(!globalMakerIdx[mk]) globalMakerIdx[mk]={};
+    if(!(g.id in globalMakerIdx[mk])){
+      globalMakerIdx[mk][g.id]=Object.keys(globalMakerIdx[mk]).length;
+    }
+    globalGameShade[g.id]=globalMakerIdx[mk][g.id];
+  });
+
   for(let m=0;m<12;m++){
     const ms=`${calYear}-${String(m+1).padStart(2,'0')}`;
     const first=new Date(calYear,m,1),last=new Date(calYear,m+1,0);
@@ -965,25 +977,13 @@ function renderCalendar(){
     const monthGameIds=[...new Set(monthSessions.map(x=>x.g.id))];
     const monthGames=monthGameIds.map(id=>games.find(g=>g.id===id)).filter(Boolean);
 
-    // Assign shade index per maker (different games same maker get different shades)
-    const makerGameIdx={};
-    const gameShade={};
-    monthSessions.forEach(x=>{
-      const mk=x.g.maker||'other';
-      if(!makerGameIdx[mk]) makerGameIdx[mk]={};
-      if(!(x.g.id in makerGameIdx[mk])){
-        makerGameIdx[mk][x.g.id]=Object.keys(makerGameIdx[mk]).length;
-      }
-      gameShade[x.g.id]=makerGameIdx[mk][x.g.id];
-    });
-
     // Build bar segment data (split per week row)
     let barSegs=[];
     monthSessions.forEach((x,si)=>{
       const clS=x.gs<mStart?mStart:x.gs;
       const clE=x.ge>mEnd?mEnd:x.ge;
       let dayS=parseInt(clS.slice(8)), dayE=parseInt(clE.slice(8));
-      const shade=gameShade[x.g.id]||0;
+      const shade=globalGameShade[x.g.id]||0;
       const barColor=shadeHex(x.M.color, shade);
       let d=dayS;
       while(d<=dayE){
@@ -1014,7 +1014,7 @@ function renderCalendar(){
       </div>
       ${monthGames.length?`<div class="month-bar-legend">
         ${monthGames.map(g=>{
-          const shade=gameShade[g.id]||0;
+          const shade=globalGameShade[g.id]||0;
           const col=shadeHex(makerOf(g).color, shade);
           return `<div class="month-bar-legend-item" onclick="openPanel('${g.id}')">
           <div class="month-bar-legend-dot" style="background:${col}"></div>
