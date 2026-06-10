@@ -960,18 +960,21 @@ function renderCalendar(){
     });
     gameMonths[g.id]=ms;
   });
-  // Greedy color: across ALL games, assign lowest color not used by any game sharing a month
+  // Greedy color: cycle through palette, skip only if conflict on a shared month
   const gameColorIdx={};
+  let nextCI=0;
   games.forEach(g=>{
+    if(!gameMonths[g.id].size){ gameColorIdx[g.id]=nextCI%CAL_PALETTE.length; nextCI++; return; }
     const used=new Set();
     games.forEach(o=>{
       if(o.id===g.id||!(o.id in gameColorIdx)) return;
       const gm=gameMonths[g.id], om=gameMonths[o.id];
       for(const m of gm){ if(om.has(m)){ used.add(gameColorIdx[o.id]); break; } }
     });
-    let ci=0;
-    while(used.has(ci)) ci++;
+    let ci=nextCI%CAL_PALETTE.length, tries=0;
+    while(used.has(ci)&&tries<CAL_PALETTE.length){ ci=(ci+1)%CAL_PALETTE.length; tries++; }
     gameColorIdx[g.id]=ci;
+    nextCI=ci+1;
   });
 
   for(let m=0;m<12;m++){
