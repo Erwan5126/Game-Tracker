@@ -319,7 +319,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="exportData()">↓ Exporter</button>
         <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="document.getElementById('importFile').click()">↑ Importer</button>
       </div>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </aside>
 
@@ -491,6 +490,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
 </div>
 
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
 <script>
 // ─── MAKERS & CONSOLES ───
 const MAKERS = {
@@ -824,7 +824,11 @@ function onModalStatusChange(){
   const s=document.getElementById('mStatus').value;
   const sf=document.getElementById('mSessionsField');
   sf.className='field'+(s==='todo'?' status-disabled':'');
-  if(s==='todo') document.getElementById('mSessions').innerHTML='';
+  if(s==='todo'){ document.getElementById('mSessions').innerHTML=''; }
+  // Auto-add a session row if switching to doing/done and none exist
+  if((s==='doing'||s==='done')&&!document.querySelectorAll('#mSessions .session-row').length){
+    addSessionRow(today(), s==='done'?today():'');
+  }
 }
 function addSessionRow(startVal,endVal){
   const container=document.getElementById('mSessions');
