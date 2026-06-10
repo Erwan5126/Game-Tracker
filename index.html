@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F7F7F5">
+<title>Game.Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F7F5;--bg2:#FFFFFF;--bg3:#F0EFED;
+  --border:#E5E4E0;--border2:#D0CFC9;
+  --text:#111111;--text2:#555550;--text3:#999994;
+  --accent:#F5C842;
+  --sony:#003791;--nintendo:#E60012;--microsoft:#107C10;--pc:#4A5568;--sega:#0089CF;--mobile:#9333EA;--other:#888884;
+  --done-bg:#ECFDF3;--done-text:#15803D;
+  --doing-bg:#FFF7ED;--doing-text:#C2410C;
+  --todo-bg:#F3F4F6;--todo-text:#6B7280;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{font-size:20px;font-weight:800;letter-spacing:-1px;color:var(--text);line-height:1}
+.logo-mark span{color:var(--accent)}
+.logo-sub{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-section-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s;color:var(--text2);font-size:13px;font-weight:500;border:none;background:transparent;width:100%;text-align:left;font-family:'Inter',sans-serif}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.on{background:var(--text);color:#fff}
+.nav-item .nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-item .nav-badge{margin-left:auto;font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 7px;border-radius:10px;font-weight:600}
+.nav-item.on .nav-badge{background:rgba(255,255,255,.2);color:rgba(255,255,255,.8)}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.add-btn{width:100%;padding:9px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
+.add-btn:hover{opacity:.85}
+
+/* Main */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.main-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px}
+.main-title{font-size:18px;font-weight:700;letter-spacing:-.5px;flex:1}
+.search-wrap{position:relative;flex:1;max-width:280px}
+.search-wrap input{width:100%;padding:7px 12px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border .15s}
+.search-wrap input:focus{border-color:var(--border2);background:#fff}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none}
+.main-content{padding:20px 24px;padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
+
+.view{display:none}.view.on{display:block}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s;white-space:nowrap}
+.filter-chip:hover{border-color:var(--border2);color:var(--text)}
+.filter-chip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.filter-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+
+/* ── MAKER SECTION ── */
+.maker-section{margin-bottom:32px}
+.maker-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.maker-bar{width:4px;height:22px;border-radius:2px;flex-shrink:0}
+.maker-name{font-size:16px;font-weight:800;letter-spacing:-.4px}
+.maker-count{font-size:11px;color:var(--text3);font-weight:500}
+.maker-line{flex:1;height:1px;background:var(--border)}
+
+/* Console sub-section */
+.console-section{margin-bottom:16px;margin-left:14px}
+.console-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.console-name{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:-.1px}
+.console-count{font-size:10px;color:var(--text3);font-weight:500}
+
+/* ── GAME CARDS ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.game-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;cursor:pointer;transition:all .12s;position:relative;overflow:hidden;display:flex;gap:12px;align-items:flex-start}
+.game-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.game-cover{width:48px;height:64px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+.game-cover-ph{width:48px;height:64px;border-radius:6px;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--border2)}
+.game-card-info{flex:1;min-width:0}
+.game-card-title{font-size:14px;font-weight:600;letter-spacing:-.3px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-card-meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.game-card-bottom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.status-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
+.status-badge.done{background:var(--done-bg);color:var(--done-text)}
+.status-badge.doing{background:var(--doing-bg);color:var(--doing-text)}
+.status-badge.todo{background:var(--todo-bg);color:var(--todo-text)}
+.hours-badge{font-size:10px;color:var(--text3);font-weight:500}
+.stars-mini{display:flex;gap:1px;margin-left:auto}
+.star-mini{font-size:10px;color:#E5E4E0}
+.star-mini.on{color:var(--accent)}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-title{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.empty-sub{font-size:12px;line-height:1.6}
+.empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:3px;font-weight:500}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.section-title{font-size:13px;font-weight:700;margin-bottom:10px;letter-spacing:-.2px}
+.maker-stat-block{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.maker-stat-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.maker-stat-name{font-size:13px;font-weight:700}
+.maker-stat-total{font-size:11px;color:var(--text3);margin-left:auto;font-weight:500}
+.console-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.console-bar-name{font-size:11px;font-weight:600;color:var(--text2);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.console-bar-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.console-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.console-bar-count{font-size:11px;color:var(--text3);width:22px;text-align:right;flex-shrink:0}
+.genre-chips{display:flex;gap:6px;flex-wrap:wrap}
+.genre-chip{padding:4px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);font-size:11px;font-weight:500;color:var(--text2)}
+
+/* ── GAME BARS IN MONTHS ── */
+.month-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;position:relative}
+.mday-lbl{font-size:8px;color:var(--text3);text-align:center;padding-bottom:2px;font-weight:600}
+.mday{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:var(--text);font-weight:500;transition:transform .1s;position:relative;z-index:2}
+.mday.past{color:var(--text)}.mday.future{color:#CCC}
+.mday.lv1{background:#FEF9E7;color:#8B7355}
+.mday.lv2{background:#FDF3C7;color:#7A6030}
+.mday.lv3{background:#F9E077;color:#5A4520;font-weight:700}
+.mday.lv4{background:var(--accent);color:#3A2E00;font-weight:700}
+.mday.today{outline:2px solid var(--text);outline-offset:1px}
+.mday:not(.future):hover{transform:scale(1.2);z-index:3;cursor:pointer}
+.bars-overlay{position:absolute;inset:0;pointer-events:none;z-index:1}
+.bar-seg{position:absolute;height:4px;border-radius:3px;pointer-events:auto;cursor:pointer;opacity:.7;transition:opacity .12s}
+.bar-seg:hover{opacity:1}
+.bar-seg.striped{background-image:repeating-linear-gradient(-45deg,transparent,transparent 2px,rgba(255,255,255,.3) 2px,rgba(255,255,255,.3) 4px)}
+.month-bar-legend{margin-top:6px;display:flex;flex-direction:column;gap:2px}
+.month-bar-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:1px 0}
+.month-bar-legend-item:hover .month-bar-legend-name{color:var(--text)}
+.month-bar-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.month-bar-legend-name{font-size:8px;font-weight:600;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .1s}
+
+/* ── CALENDAR ── */
+.cal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.cal-title{font-size:16px;font-weight:700;letter-spacing:-.4px}
+.cal-year-btns{display:flex;gap:6px;margin-left:auto}
+.cal-year-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer}
+.cal-year-btn.on{background:var(--text);color:#fff;border-color:var(--text)}
+.cal-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.cal-chip{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+.cal-chip-val{font-size:20px;font-weight:800;letter-spacing:-1px}
+.cal-chip-lbl{font-size:10px;color:var(--text3);font-weight:500;margin-top:1px}
+.month-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.month-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:800px){.month-grid{grid-template-columns:repeat(4,1fr)}}
+.month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.month-card.cur{border-color:var(--border2)}
+.month-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.month-name{font-size:12px;font-weight:700}
+.month-cnt{font-size:10px;color:var(--text3);font-weight:600}
+
+/* ── PANEL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.on{display:flex}
+@media(min-width:600px){.overlay{align-items:center}}
+.panel{background:var(--bg2);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
+@media(min-width:600px){.panel{border-radius:14px;max-height:85vh}}
+.panel-drag{width:32px;height:3px;background:var(--border2);border-radius:2px;margin:10px auto 0}
+.panel-head{padding:16px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
+.panel-maker-bar{width:4px;flex-shrink:0;border-radius:2px;align-self:stretch;min-height:40px}
+.panel-title-area{flex:1;min-width:0}
+.panel-plat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:3px}
+.panel-title{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1.15}
+.panel-studio{font-size:12px;color:var(--text3);margin-top:2px}
+.panel-cover-wrap{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+.panel-cover{width:90px;height:120px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+.panel-cover-info{flex:1;min-width:0}
+.panel-close{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:none;color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.panel-body{padding:16px 18px}
+.panel-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.panel-chip{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px}
+.panel-chip-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:600;margin-bottom:2px}
+.panel-chip-val{font-size:13px;font-weight:600}
+.panel-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.panel-stars-lbl{font-size:11px;color:var(--text3);font-weight:500}
+.pstar{font-size:24px;color:#E5E4E0;cursor:pointer;line-height:1;transition:color .1s}
+.pstar.on{color:var(--accent)}
+.panel-hours-big{text-align:center;padding:14px;background:var(--bg3);border-radius:10px;margin-bottom:14px}
+.panel-hours-num{font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1}
+.panel-hours-lbl{font-size:11px;color:var(--text3);font-weight:500;margin-top:2px}
+.panel-note{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;outline:none;min-height:68px;margin-bottom:14px;line-height:1.5}
+.panel-note:focus{border-color:var(--border2);background:#fff}
+.panel-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-primary{padding:9px 16px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;flex:1;transition:opacity .15s}
+.btn-primary:hover{opacity:.8}
+.btn-secondary{padding:9px 12px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer}
+.btn-secondary:hover{border-color:var(--border2)}
+.btn-danger{padding:9px 12px;background:transparent;color:#DC2626;border:1px solid #FECACA;border-radius:8px;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer}
+.btn-doing{flex:1;padding:9px 12px;background:var(--doing-bg);color:var(--doing-text);border:1px solid #FDBA74;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.on{display:flex}
+.modal{background:var(--bg2);border-radius:14px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-md)}
+.modal-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:var(--border2);background:#fff}
+.field-hint{font-size:10px;color:var(--text3);margin-top:3px}
+.fields-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-stars{display:flex;gap:4px;padding:4px 0}
+.mstar{font-size:22px;color:#E5E4E0;cursor:pointer;transition:color .1s}
+.mstar.on{color:var(--accent)}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.status-disabled{opacity:.35;pointer-events:none}
+
+/* ── DAY POPUP ── */
+.day-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;display:none;align-items:flex-end;justify-content:center}
+.day-overlay.on{display:flex}
+@media(min-width:600px){.day-overlay{align-items:center}}
+.day-popup{background:var(--bg2);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:70vh;overflow-y:auto;padding:16px 18px}
+@media(min-width:600px){.day-popup{border-radius:14px}}
+.day-popup-handle{width:28px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 14px}
+.day-popup-title{font-size:15px;font-weight:700;margin-bottom:12px}
+
+/* ── TOOLTIP ── */
+.tooltip{position:fixed;background:var(--text);color:#fff;border-radius:7px;padding:6px 10px;font-size:11px;pointer-events:none;z-index:400;display:none;max-width:200px;box-shadow:var(--shadow-md);line-height:1.4}
+
+/* ── MOBILE NAV ── */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:30;justify-content:space-around}
+.mnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-family:'Inter',sans-serif}
+.mnav-item.on{color:var(--text)}
+.mnav-icon{font-size:18px}
+.mnav-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+
+@media(max-width:640px){
+  .sidebar{display:none}
+  .mobile-nav{display:flex}
+  .main-header{padding:14px 16px 12px}
+  .main-content{padding:14px 16px;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .cards-grid{grid-template-columns:1fr}
+  .console-section{margin-left:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">GAME<span>.</span>LOG</div>
+      <div class="logo-sub">Tracker personnel</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Bibliothèque</div>
+      <button class="nav-item on" data-view="library" onclick="switchView('library',this)">
+        <span class="nav-icon">🎮</span> Tous les jeux
+        <span class="nav-badge" id="badge-library">0</span>
+      </button>
+      <button class="nav-item" data-view="backlog" onclick="switchView('backlog',this)">
+        <span class="nav-icon">📋</span> Backlog
+        <span class="nav-badge" id="badge-backlog">0</span>
+      </button>
+      <button class="nav-item" data-view="doing" onclick="switchView('doing',this)">
+        <span class="nav-icon">▶</span> En cours
+        <span class="nav-badge" id="badge-doing">0</span>
+      </button>
+      <button class="nav-item" data-view="done" onclick="switchView('done',this)">
+        <span class="nav-icon">✓</span> Terminés
+        <span class="nav-badge" id="badge-done">0</span>
+      </button>
+      <div class="nav-section-label" style="margin-top:8px">Aperçu</div>
+      <button class="nav-item" data-view="calendar" onclick="switchView('calendar',this)">
+        <span class="nav-icon">📅</span> Calendrier
+      </button>
+      <button class="nav-item" data-view="stats" onclick="switchView('stats',this)">
+        <span class="nav-icon">📊</span> Statistiques
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="add-btn" onclick="openModal(null)">＋ Ajouter un jeu</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title" id="mainTitle">Tous les jeux</div>
+      <div class="search-wrap" id="searchWrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderCurrent()">
+      </div>
+      <button class="add-btn" style="width:auto;padding:7px 14px;font-size:12px" onclick="openModal(null)">＋</button>
+    </div>
+    <div class="main-content">
+      <div class="view on" id="view-library">
+        <div class="filter-bar" id="libFilters">
+          <button class="filter-chip on" data-maker="all" onclick="setMakerFilter('all',this)">Tous</button>
+          <div class="filter-sep"></div>
+          <button class="filter-chip on" data-status="all" onclick="setStatusFilter('all',this)">Tous statuts</button>
+          <button class="filter-chip" data-status="doing" onclick="setStatusFilter('doing',this)">En cours</button>
+          <button class="filter-chip" data-status="done" onclick="setStatusFilter('done',this)">Terminés</button>
+          <button class="filter-chip" data-status="todo" onclick="setStatusFilter('todo',this)">Backlog</button>
+        </div>
+        <div id="libraryContent"></div>
+      </div>
+      <div class="view" id="view-backlog"><div id="backlogContent"></div></div>
+      <div class="view" id="view-doing"><div id="doingContent"></div></div>
+      <div class="view" id="view-done"><div id="doneContent"></div></div>
+      <div class="view" id="view-calendar"><div id="calContent"></div></div>
+      <div class="view" id="view-stats"><div id="statsContent"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <button class="mnav-item on" data-view="library" onclick="switchView('library',this)"><span class="mnav-icon">🎮</span><span class="mnav-label">Jeux</span></button>
+  <button class="mnav-item" data-view="backlog" onclick="switchView('backlog',this)"><span class="mnav-icon">📋</span><span class="mnav-label">Backlog</span></button>
+  <button class="mnav-item" data-view="doing" onclick="switchView('doing',this)"><span class="mnav-icon">▶</span><span class="mnav-label">En cours</span></button>
+  <button class="mnav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="mnav-icon">📅</span><span class="mnav-label">Calendrier</span></button>
+  <button class="mnav-item" data-view="stats" onclick="switchView('stats',this)"><span class="mnav-icon">📊</span><span class="mnav-label">Stats</span></button>
+</nav>
+
+<div class="tooltip" id="tooltip"></div>
+
+<!-- PANEL -->
+<div class="overlay" id="panelOverlay" onclick="handleOverlayClick(event,'panelOverlay')">
+  <div class="panel" id="panelEl">
+    <div class="panel-drag"></div>
+    <div class="panel-head">
+      <div class="panel-maker-bar" id="pMakerBar"></div>
+      <div class="panel-title-area">
+        <div class="panel-plat-label" id="pPlatLabel"></div>
+        <div class="panel-title" id="pTitle"></div>
+        <div class="panel-studio" id="pStudio"></div>
+      </div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-cover-wrap" id="pCoverWrap">
+        <img class="panel-cover" id="pCover" src="" alt="">
+        <div class="panel-cover-info">
+          <div class="panel-hours-big" style="margin-bottom:10px">
+            <div class="panel-hours-num" id="pHoursNum">—</div>
+            <div class="panel-hours-lbl">heures de jeu</div>
+          </div>
+          <div class="panel-stars">
+            <span class="panel-stars-lbl">Note</span>
+            <span class="pstar" id="pst1" onclick="setPanelRating(1)">★</span>
+            <span class="pstar" id="pst2" onclick="setPanelRating(2)">★</span>
+            <span class="pstar" id="pst3" onclick="setPanelRating(3)">★</span>
+            <span class="pstar" id="pst4" onclick="setPanelRating(4)">★</span>
+            <span class="pstar" id="pst5" onclick="setPanelRating(5)">★</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-row" id="pChips"></div>
+      <textarea class="panel-note" id="pNote" placeholder="Notes, impressions, avis..." oninput="savePanelNote()" rows="3"></textarea>
+      <div class="panel-actions" id="pActions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY POPUP -->
+<div class="day-overlay" id="dayOverlay" onclick="handleOverlayClick(event,'dayOverlay')">
+  <div class="day-popup" id="dayPopupEl">
+    <div class="day-popup-handle"></div>
+    <div class="day-popup-title" id="dayTitle"></div>
+    <div id="dayItems"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event,'modalOverlay')">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Ajouter un jeu</div>
+    <div class="field">
+      <label>Titre *</label>
+      <input type="text" id="mTitle" placeholder="Nom du jeu...">
+    </div>
+    <div class="field">
+      <label>Jaquette (URL image)</label>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <input type="text" id="mCover" placeholder="https://..." style="flex:1" oninput="previewCover()">
+        <img id="mCoverPreview" src="" style="width:40px;height:53px;border-radius:4px;object-fit:cover;background:var(--bg3);display:none;flex-shrink:0">
+      </div>
+      <div class="field-hint">Colle l'URL d'une image de jaquette (Google Images, IGDB, etc.)</div>
+    </div>
+    <div class="fields-2">
+      <div class="field">
+        <label>Constructeur</label>
+        <select id="mMaker" onchange="populateConsoles()"></select>
+      </div>
+      <div class="field">
+        <label>Console</label>
+        <select id="mConsole"></select>
+      </div>
+    </div>
+    <div class="fields-2">
+      <div class="field">
+        <label>Statut</label>
+        <select id="mStatus" onchange="onModalStatusChange()">
+          <option value="todo">Backlog</option>
+          <option value="doing">En cours</option>
+          <option value="done">Terminé</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Genre</label>
+        <input type="text" id="mGenre" placeholder="RPG, FPS...">
+      </div>
+    </div>
+    <div class="fields-2">
+      <div class="field">
+        <label>Studio / Éditeur</label>
+        <input type="text" id="mStudio" placeholder="Optionnel">
+      </div>
+      <div class="field">
+        <label>Date de sortie</label>
+        <input type="date" id="mRelease">
+      </div>
+    </div>
+    <div class="fields-2">
+      <div class="field" id="mDateStartField">
+        <label>Date début</label>
+        <input type="date" id="mDateStart">
+      </div>
+      <div class="field" id="mDateEndField">
+        <label>Date fin</label>
+        <input type="date" id="mDateEnd">
+      </div>
+    </div>
+    <div class="field">
+      <label>Heures de jeu</label>
+      <input type="number" id="mHours" placeholder="Ex: 42" min="0" step="0.5">
+    </div>
+    <div class="field">
+      <label>Note (1–5)</label>
+      <div class="modal-stars">
+        <span class="mstar" id="ms1" onclick="setModalRating(1)">★</span>
+        <span class="mstar" id="ms2" onclick="setModalRating(2)">★</span>
+        <span class="mstar" id="ms3" onclick="setModalRating(3)">★</span>
+        <span class="mstar" id="ms4" onclick="setModalRating(4)">★</span>
+        <span class="mstar" id="ms5" onclick="setModalRating(5)">★</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn-primary" onclick="saveGame()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── MAKERS & CONSOLES ───
+const MAKERS = {
+  sony:      {label:'Sony',      color:'#003791', consoles:['PS5','PS4','PS3','PS2','PS1','PSP','PS Vita']},
+  nintendo:  {label:'Nintendo',  color:'#E60012', consoles:['Switch 2','Switch','Wii U','Wii','GameCube','N64','SNES','NES','3DS','DS','GBA','Game Boy']},
+  microsoft: {label:'Microsoft', color:'#107C10', consoles:['Xbox Series X|S','Xbox One','Xbox 360','Xbox']},
+  pc:        {label:'PC',        color:'#4A5568', consoles:['Steam','Epic Games','GOG','Battle.net','Autre launcher']},
+  sega:      {label:'Sega',      color:'#0089CF', consoles:['Dreamcast','Saturn','Mega Drive','Game Gear']},
+  mobile:    {label:'Mobile',    color:'#9333EA', consoles:['iOS','Android']},
+  other:     {label:'Autre',     color:'#888884', consoles:['Autre']},
+};
+const MAKER_ORDER = ['sony','nintendo','microsoft','pc','sega','mobile','other'];
+const STATUS_LABELS = {todo:'Backlog',doing:'En cours',done:'Terminé'};
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+// ─── STATE ───
+const LS = 'gamelog_v2';
+let games = (() => {
+  try{
+    let g = JSON.parse(localStorage.getItem(LS));
+    if(g) return g;
+    // Migration from v1 (plat -> maker/console)
+    const old = JSON.parse(localStorage.getItem('gamelog_v1'));
+    if(old){
+      const map = {ps:['sony','PS5'],xbox:['microsoft','Xbox Series X|S'],switch:['nintendo','Switch'],pc:['pc','Steam'],mobile:['mobile','iOS'],other:['other','Autre']};
+      const migrated = old.map(x=>{
+        const [maker,console_]=map[x.plat]||['other','Autre'];
+        const {plat,...rest}=x;
+        return {...rest,maker,console:console_};
+      });
+      localStorage.setItem(LS,JSON.stringify(migrated));
+      return migrated;
+    }
+    return [];
+  }catch{ return []; }
+})();
+let currentView='library', makerFilter='all', statusFilter='all', panelId=null, modalRating=0, calYear=new Date().getFullYear();
+
+function save(){ localStorage.setItem(LS,JSON.stringify(games)); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function fmt(d){ if(!d)return''; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function activityDate(g){
+  if(g.status==='done') return g.dateEnd||g.dateStart||null;
+  if(g.status==='doing') return g.dateStart||null;
+  return null;
+}
+function makerOf(g){ return MAKERS[g.maker]||MAKERS.other; }
+
+// ─── VIEWS ───
+const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',calendar:'Calendrier',stats:'Statistiques'};
+function switchView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('view-'+v).classList.add('on');
+  document.querySelectorAll('[data-view]').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('[data-view="'+v+'"]').forEach(el=>el.classList.add('on'));
+  document.getElementById('mainTitle').textContent=VIEW_TITLES[v]||v;
+  document.getElementById('searchWrap').style.display=['library','backlog','doing','done'].includes(v)?'':'none';
+  renderCurrent();
+}
+function renderCurrent(){
+  if(currentView==='library') renderLibrary();
+  else if(currentView==='backlog') renderStatusView('backlog','todo');
+  else if(currentView==='doing') renderStatusView('doing','doing');
+  else if(currentView==='done') renderStatusView('done','done');
+  else if(currentView==='calendar') renderCalendar();
+  else if(currentView==='stats') renderStats();
+  updateBadges();
+}
+function updateBadges(){
+  document.getElementById('badge-library').textContent=games.length;
+  document.getElementById('badge-backlog').textContent=games.filter(g=>g.status==='todo').length;
+  document.getElementById('badge-doing').textContent=games.filter(g=>g.status==='doing').length;
+  document.getElementById('badge-done').textContent=games.filter(g=>g.status==='done').length;
+}
+
+// ─── FILTERS ───
+function buildMakerFilters(){
+  const present=[...new Set(games.map(g=>g.maker))].filter(Boolean);
+  const ordered=MAKER_ORDER.filter(m=>present.includes(m));
+  const bar=document.getElementById('libFilters');
+  bar.querySelectorAll('[data-maker]:not([data-maker="all"])').forEach(el=>el.remove());
+  const allBtn=bar.querySelector('[data-maker="all"]');
+  let after=allBtn;
+  ordered.forEach(m=>{
+    const b=document.createElement('button');
+    b.className='filter-chip'+(makerFilter===m?' on':'');
+    b.dataset.maker=m;
+    b.textContent=MAKERS[m].label;
+    b.onclick=()=>setMakerFilter(m,b);
+    after.insertAdjacentElement('afterend',b);
+    after=b;
+  });
+}
+function setMakerFilter(m,btn){
+  makerFilter=m;
+  document.querySelectorAll('[data-maker]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderLibrary();
+}
+function setStatusFilter(s,btn){
+  statusFilter=s;
+  document.querySelectorAll('[data-status]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderLibrary();
+}
+
+// ─── HIERARCHICAL RENDER (maker -> console -> cards) ───
+function hierarchyHTML(list){
+  // Group: maker -> console -> games
+  const byMaker={};
+  list.forEach(g=>{
+    const mk=g.maker||'other';
+    if(!byMaker[mk]) byMaker[mk]={};
+    const c=g.console||'Autre';
+    if(!byMaker[mk][c]) byMaker[mk][c]=[];
+    byMaker[mk][c].push(g);
+  });
+  let html='';
+  MAKER_ORDER.filter(mk=>byMaker[mk]).forEach(mk=>{
+    const M=MAKERS[mk];
+    const consoles=byMaker[mk];
+    const makerTotal=Object.values(consoles).reduce((s,a)=>s+a.length,0);
+    // Order consoles by MAKERS definition order, unknowns at end
+    const cOrder=[...M.consoles.filter(c=>consoles[c]), ...Object.keys(consoles).filter(c=>!M.consoles.includes(c))];
+    html+=`<div class="maker-section">
+      <div class="maker-header">
+        <div class="maker-bar" style="background:${M.color}"></div>
+        <div class="maker-name">${M.label}</div>
+        <div class="maker-count">${makerTotal} jeu${makerTotal>1?'x':''}</div>
+        <div class="maker-line"></div>
+      </div>
+      ${cOrder.map(c=>`
+      <div class="console-section">
+        <div class="console-header">
+          <div class="console-name" style="color:${M.color}">${esc(c)}</div>
+          <div class="console-count">· ${consoles[c].length}</div>
+        </div>
+        <div class="cards-grid">${consoles[c].map(g=>gameCardHTML(g)).join('')}</div>
+      </div>`).join('')}
+    </div>`;
+  });
+  return html;
+}
+
+function renderLibrary(){
+  buildMakerFilters();
+  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  const filtered=games.filter(g=>{
+    if(makerFilter!=='all'&&g.maker!==makerFilter) return false;
+    if(statusFilter!=='all'&&g.status!==statusFilter) return false;
+    if(q&&!g.title.toLowerCase().includes(q)&&!(g.studio||'').toLowerCase().includes(q)&&!(g.console||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('libraryContent').innerHTML = filtered.length?hierarchyHTML(filtered):emptyHTML('Aucun jeu trouvé','Modifie tes filtres ou ajoute un nouveau jeu.');
+}
+
+function renderStatusView(viewId,status){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  const filtered=games.filter(g=>{
+    if(g.status!==status) return false;
+    if(q&&!g.title.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const msgs={todo:'Ton backlog est vide.',doing:'Aucun jeu en cours.',done:'Aucun jeu terminé pour le moment.'};
+  document.getElementById(viewId+'Content').innerHTML = filtered.length?hierarchyHTML(filtered):emptyHTML('',msgs[status]);
+}
+
+function emptyHTML(title,sub){
+  return `<div class="empty-state"><div class="empty-icon">🎮</div>${title?`<div class="empty-title">${title}</div>`:''}<div class="empty-sub">${sub}</div><button class="empty-cta" onclick="openModal(null)">Ajouter un jeu</button></div>`;
+}
+
+function gameCardHTML(g){
+  let stars='<div class="stars-mini">';
+  for(let i=1;i<=5;i++) stars+=`<span class="star-mini ${i<=(g.rating||0)?'on':''}">★</span>`;
+  stars+='</div>';
+  return `<div class="game-card" onclick="openPanel('${g.id}')" style="border-left:4px solid ${makerOf(g).color}">
+    ${g.cover?`<img class="game-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=game-cover-ph>🎮</div>'">`:`<div class="game-cover-ph">🎮</div>`}
+    <div class="game-card-info">
+    <div class="game-card-title">${esc(g.title)}</div>
+    <div class="game-card-meta">
+      <span>${esc(g.console||'')}</span>
+      ${g.release?`<span>${g.release.slice(0,4)}</span>`:''}
+      ${g.studio?`<span>${esc(g.studio)}</span>`:''}
+      ${g.genre?`<span>${esc(g.genre)}</span>`:''}
+    </div>
+    <div class="game-card-bottom">
+      <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+      ${g.hours?`<span class="hours-badge">🕒 ${g.hours}h</span>`:''}
+      ${stars}
+    </div>
+    </div>
+  </div>`;
+}
+
+// ─── PANEL ───
+function openPanel(id){
+  const g=games.find(x=>x.id===id); if(!g) return;
+  panelId=id;
+  const M=makerOf(g);
+  document.getElementById('pMakerBar').style.background=M.color;
+  document.getElementById('pPlatLabel').textContent=`${M.label} · ${g.console||''}`;
+  document.getElementById('pTitle').textContent=g.title;
+  document.getElementById('pStudio').textContent=[g.studio,g.genre].filter(Boolean).join(' · ');
+  // Cover
+  const coverEl=document.getElementById('pCover');
+  if(g.cover){
+    coverEl.src=g.cover;
+    coverEl.style.display='';
+    coverEl.onerror=function(){ this.style.display='none'; };
+  } else { coverEl.style.display='none'; }
+  for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
+  document.getElementById('pHoursNum').textContent=g.hours||'—';
+  const chips=[
+    {lbl:'Statut',val:STATUS_LABELS[g.status]},
+    g.release?{lbl:'Sortie',val:fmt(g.release)}:null,
+    g.dateStart?{lbl:'Début',val:fmt(g.dateStart)}:null,
+    g.dateEnd?{lbl:'Fin',val:fmt(g.dateEnd)}:null,
+  ].filter(Boolean);
+  document.getElementById('pChips').innerHTML=chips.map(c=>`<div class="panel-chip"><div class="panel-chip-lbl">${c.lbl}</div><div class="panel-chip-val">${esc(c.val)}</div></div>`).join('');
+  document.getElementById('pNote').value=g.note||'';
+  const isDone=g.status==='done',isDoing=g.status==='doing';
+  document.getElementById('pActions').innerHTML=`
+    <button class="btn-primary" onclick="setPanelStatus('done')" style="${isDone?'background:#15803D':''}">${isDone?'✓ Terminé':'Marquer terminé'}</button>
+    <button class="btn-doing" onclick="setPanelStatus('doing')" style="${isDoing?'background:#FED7AA':''}">${isDoing?'▶ En cours':'Commencer'}</button>
+    <button class="btn-secondary" onclick="openModal('${id}')">Modifier</button>
+    <button class="btn-danger" onclick="deleteGame('${id}')">Supprimer</button>`;
+  document.getElementById('panelOverlay').classList.add('on');
+}
+function closePanel(){ document.getElementById('panelOverlay').classList.remove('on'); panelId=null; }
+function setPanelStatus(s){
+  const g=games.find(x=>x.id===panelId); if(!g) return;
+  g.status=s;
+  if(s==='done'&&!g.dateEnd) g.dateEnd=today();
+  if(s==='doing'&&!g.dateStart) g.dateStart=today();
+  save(); openPanel(panelId); renderCurrent();
+}
+function setPanelRating(r){
+  const g=games.find(x=>x.id===panelId); if(!g) return;
+  g.rating=g.rating===r?0:r;
+  save();
+  for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
+  renderCurrent();
+}
+function savePanelNote(){
+  const g=games.find(x=>x.id===panelId); if(!g) return;
+  g.note=document.getElementById('pNote').value; save();
+}
+function deleteGame(id){
+  if(!confirm('Supprimer ce jeu ?')) return;
+  games=games.filter(x=>x.id!==id);
+  save(); closePanel(); renderCurrent();
+}
+
+// ─── MODAL ───
+function populateMakers(){
+  document.getElementById('mMaker').innerHTML = MAKER_ORDER.map(m=>`<option value="${m}">${MAKERS[m].label}</option>`).join('');
+}
+function populateConsoles(selectedConsole){
+  const mk=document.getElementById('mMaker').value;
+  const consoles=MAKERS[mk].consoles;
+  document.getElementById('mConsole').innerHTML = consoles.map(c=>`<option value="${esc(c)}"${c===selectedConsole?' selected':''}>${esc(c)}</option>`).join('');
+}
+function onModalStatusChange(){
+  const s=document.getElementById('mStatus').value;
+  document.getElementById('mDateStartField').className='field'+(s==='todo'?' status-disabled':'');
+  document.getElementById('mDateEndField').className='field'+(s!=='done'?' status-disabled':'');
+  if(s==='todo'){ document.getElementById('mDateStart').value=''; document.getElementById('mDateEnd').value=''; }
+  if(s==='doing'){ document.getElementById('mDateEnd').value=''; if(!document.getElementById('mDateStart').value) document.getElementById('mDateStart').value=today(); }
+  if(s==='done'&&!document.getElementById('mDateEnd').value) document.getElementById('mDateEnd').value=today();
+}
+function openModal(id){
+  modalRating=0;
+  populateMakers();
+  if(id){
+    const g=games.find(x=>x.id===id); if(!g) return;
+    document.getElementById('modalTitle').textContent='Modifier';
+    document.getElementById('mTitle').value=g.title||'';
+    document.getElementById('mCover').value=g.cover||'';
+    document.getElementById('mMaker').value=g.maker||'pc';
+    populateConsoles(g.console);
+    document.getElementById('mStatus').value=g.status||'todo';
+    document.getElementById('mStudio').value=g.studio||'';
+    document.getElementById('mRelease').value=g.release||'';
+    document.getElementById('mGenre').value=g.genre||'';
+    document.getElementById('mDateStart').value=g.dateStart||'';
+    document.getElementById('mDateEnd').value=g.dateEnd||'';
+    document.getElementById('mHours').value=g.hours||'';
+    modalRating=g.rating||0;
+    document.getElementById('modalOverlay').dataset.editId=id;
+  } else {
+    document.getElementById('modalTitle').textContent='Ajouter un jeu';
+    document.getElementById('mTitle').value='';
+    document.getElementById('mCover').value='';
+    document.getElementById('mMaker').value='pc';
+    populateConsoles();
+    document.getElementById('mStatus').value='todo';
+    document.getElementById('mStudio').value='';
+    document.getElementById('mRelease').value='';
+    document.getElementById('mGenre').value='';
+    document.getElementById('mDateStart').value='';
+    document.getElementById('mDateEnd').value='';
+    document.getElementById('mHours').value='';
+    delete document.getElementById('modalOverlay').dataset.editId;
+  }
+  setModalRating(modalRating);
+  previewCover();
+  onModalStatusChange();
+  closePanel();
+  document.getElementById('modalOverlay').classList.add('on');
+  setTimeout(()=>document.getElementById('mTitle').focus(),80);
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('on'); }
+function setModalRating(r){
+  modalRating=r;
+  for(let i=1;i<=5;i++) document.getElementById('ms'+i).className='mstar'+(i<=r?' on':'');
+}
+function previewCover(){
+  const url=document.getElementById('mCover').value.trim();
+  const img=document.getElementById('mCoverPreview');
+  if(url){ img.src=url; img.style.display='block'; img.onerror=function(){this.style.display='none';}; }
+  else { img.style.display='none'; }
+}
+function saveGame(){
+  const title=document.getElementById('mTitle').value.trim();
+  if(!title){ document.getElementById('mTitle').focus(); return; }
+  const status=document.getElementById('mStatus').value;
+  const data={
+    title,
+    cover:document.getElementById('mCover').value.trim(),
+    maker:document.getElementById('mMaker').value,
+    console:document.getElementById('mConsole').value,
+    status,
+    studio:document.getElementById('mStudio').value.trim(),
+    release:document.getElementById('mRelease').value,
+    genre:document.getElementById('mGenre').value.trim(),
+    dateStart:status==='todo'?'':document.getElementById('mDateStart').value,
+    dateEnd:status!=='done'?'':document.getElementById('mDateEnd').value,
+    hours:parseFloat(document.getElementById('mHours').value)||0,
+    rating:modalRating,
+  };
+  const editId=document.getElementById('modalOverlay').dataset.editId;
+  if(editId){ const g=games.find(x=>x.id===editId); if(g) Object.assign(g,data); }
+  else { data.id='g'+Date.now(); data.created=today(); games.unshift(data); }
+  save(); closeModal(); renderCurrent();
+}
+
+// ─── CALENDAR ───
+function renderCalendar(){
+  const y=String(calYear);
+  const yi=calYear;
+  const allYears=new Set(games.map(g=>{const d=activityDate(g);return d?d.slice(0,4):null;}).filter(Boolean));
+  games.forEach(g=>{ if(g.dateStart) allYears.add(g.dateStart.slice(0,4)); });
+  allYears.add(String(new Date().getFullYear()));
+  const years=[...allYears].sort((a,b)=>b-a);
+  const todayStr=today();
+  const dayMap={};
+  games.forEach(g=>{
+    const d=activityDate(g);
+    if(d&&d.startsWith(y)){ if(!dayMap[d])dayMap[d]=[]; dayMap[d].push(g); }
+  });
+  const activeDays=Object.keys(dayMap).length;
+  const yearDone=games.filter(g=>g.status==='done'&&(activityDate(g)||'').startsWith(y)).length;
+  const yearHours=games.filter(g=>(activityDate(g)||'').startsWith(y)).reduce((s,g)=>s+(g.hours||0),0);
+  function level(c){ return c===0?0:c===1?1:c===2?2:c<=4?3:4; }
+
+  function gamesForMonth(m){
+    const ms=`${yi}-${String(m+1).padStart(2,'0')}`;
+    const mStart=ms+'-01';
+    const lastDay=new Date(yi,m+1,0).getDate();
+    const mEnd=ms+'-'+String(lastDay).padStart(2,'0');
+    return games.filter(g=>{
+      const s=g.dateStart||null, e=g.dateEnd||null;
+      if(!s&&!e) return false;
+      const gs=s||e, ge=e||(g.status==='doing'?todayStr:s);
+      return gs<=mEnd && ge>=mStart;
+    }).sort((a,b)=>(a.dateStart||a.dateEnd||'').localeCompare(b.dateStart||b.dateEnd||''));
+  }
+
+  let html=`
+  <div class="cal-header">
+    <div class="cal-title">Activité ${calYear}</div>
+    <div class="cal-year-btns">${years.map(yr=>`<button class="cal-year-btn${yr==calYear?' on':''}" onclick="setCalYear(${yr})">${yr}</button>`).join('')}</div>
+  </div>
+  <div class="cal-summary">
+    <div class="cal-chip"><div class="cal-chip-val">${activeDays}</div><div class="cal-chip-lbl">Jours actifs</div></div>
+    <div class="cal-chip"><div class="cal-chip-val">${yearDone}</div><div class="cal-chip-lbl">Jeux terminés</div></div>
+    <div class="cal-chip"><div class="cal-chip-val">${yearHours>0?yearHours+'h':'—'}</div><div class="cal-chip-lbl">Heures logguées</div></div>
+  </div>
+  <div class="month-grid">`;
+
+  for(let m=0;m<12;m++){
+    const ms=`${calYear}-${String(m+1).padStart(2,'0')}`;
+    const first=new Date(calYear,m,1),last=new Date(calYear,m+1,0);
+    const totalDaysMonth=last.getDate();
+    const startDow=(first.getDay()+6)%7;
+    const mc=Object.entries(dayMap).filter(([d])=>d.startsWith(ms)).reduce((s,[,a])=>s+a.length,0);
+    const isCur=ms===todayStr.slice(0,7);
+    const mStart=ms+'-01';
+    const mEnd=ms+'-'+String(totalDaysMonth).padStart(2,'0');
+    const monthGames=gamesForMonth(m);
+
+    // Build bar segment data (split per week row)
+    let barSegs=[];
+    monthGames.forEach((g,gi)=>{
+      const M=makerOf(g);
+      const gs=g.dateStart||g.dateEnd;
+      const ge=g.dateEnd||(g.status==='doing'?todayStr:g.dateStart);
+      const clS=gs<mStart?mStart:gs;
+      const clE=ge>mEnd?mEnd:ge;
+      let dayS=parseInt(clS.slice(8)), dayE=parseInt(clE.slice(8));
+      // Split by week rows
+      let d=dayS;
+      while(d<=dayE){
+        const lp=startDow+(d-1);
+        const colsLeft=6-(lp%7);
+        const segEnd=Math.min(dayE, d+colsLeft);
+        barSegs.push({ds:d, de:segEnd, lane:gi, color:M.color, id:g.id, title:g.title, doing:g.status==='doing'});
+        d=segEnd+1;
+      }
+    });
+
+    const barsData=barSegs.length?` data-bars='${JSON.stringify(barSegs).replace(/'/g,"&#39;")}'`:'';
+
+    html+=`<div class="month-card${isCur?' cur':''}">
+      <div class="month-head"><div class="month-name">${MONTHS[m]}</div>${mc?`<div class="month-cnt">${mc}</div>`:''}</div>
+      <div class="month-days"${barsData}>
+        ${['L','M','M','J','V','S','D'].map(d=>`<div class="mday-lbl">${d}</div>`).join('')}
+        ${Array(startDow).fill('<div class="mday"></div>').join('')}
+        ${Array.from({length:totalDaysMonth},(_,i)=>{
+          const n=i+1;
+          const ds=`${ms}-${String(n).padStart(2,'0')}`;
+          const cnt=(dayMap[ds]||[]).length;
+          const fut=ds>todayStr,isT=ds===todayStr;
+          const lv=fut?0:level(cnt);
+          const cls=['mday',lv?'lv'+lv:(fut?'future':'past'),isT?'today':''].filter(Boolean).join(' ');
+          return `<div class="${cls}" data-day="${n}"${cnt&&!fut?` onclick="showDayPopup('${ds}')" onmouseenter="showTip(event,'${ds}')" onmouseleave="hideTip()"`:''}>${n}</div>`;
+        }).join('')}
+        <div class="bars-overlay"></div>
+      </div>
+      ${monthGames.length?`<div class="month-bar-legend">
+        ${monthGames.map(g=>`<div class="month-bar-legend-item" onclick="openPanel('${g.id}')">
+          <div class="month-bar-legend-dot" style="background:${makerOf(g).color}"></div>
+          <div class="month-bar-legend-name">${esc(g.title)}</div>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('calContent').innerHTML=html;
+  requestAnimationFrame(positionAllBars);
+}
+
+function positionAllBars(){
+  document.querySelectorAll('.month-days[data-bars]').forEach(grid=>{
+    const overlay=grid.querySelector('.bars-overlay');
+    if(!overlay) return;
+    let bars;
+    try{ bars=JSON.parse(grid.dataset.bars); }catch{ return; }
+    if(!bars.length) return;
+    const gridRect=grid.getBoundingClientRect();
+    // Build map: day -> cell rect (relative to grid)
+    const dayMap={};
+    grid.querySelectorAll('.mday[data-day]').forEach(cell=>{
+      const r=cell.getBoundingClientRect();
+      dayMap[parseInt(cell.dataset.day)]={
+        l:r.left-gridRect.left, t:r.top-gridRect.top,
+        w:r.width, h:r.height
+      };
+    });
+    const barH=4, gap=1;
+    overlay.innerHTML=bars.map(b=>{
+      const ps=dayMap[b.ds], pe=dayMap[b.de];
+      if(!ps||!pe) return '';
+      const left=ps.l;
+      const width=pe.l+pe.w-ps.l;
+      const top=ps.t+ps.h-barH-gap-(b.lane*(barH+gap+1));
+      return `<div class="bar-seg ${b.doing?'striped':''}" style="left:${left}px;top:${top}px;width:${width}px;height:${barH}px;background:${b.color}" onclick="event.stopPropagation();openPanel('${b.id}')" title="${b.title}"></div>`;
+    }).join('');
+  });
+}
+function setCalYear(y){ calYear=y; renderCalendar(); }
+window.addEventListener('resize',()=>{ if(currentView==='calendar') requestAnimationFrame(positionAllBars); });
+
+// ─── DAY POPUP ───
+function showDayPopup(ds){
+  hideTip();
+  const dg=games.filter(g=>activityDate(g)===ds);
+  if(!dg.length) return;
+  const dt=new Date(ds+'T12:00:00');
+  document.getElementById('dayTitle').textContent=`${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+  document.getElementById('dayItems').innerHTML=`<div class="cards-grid">${dg.map(g=>gameCardHTML(g)).join('')}</div>`;
+  document.getElementById('dayOverlay').classList.add('on');
+}
+function closeDayPopup(){ document.getElementById('dayOverlay').classList.remove('on'); }
+
+// ─── TOOLTIP ───
+function showTip(e,ds){
+  const dg=games.filter(g=>activityDate(g)===ds);
+  if(!dg.length) return;
+  const tip=document.getElementById('tooltip');
+  const dt=new Date(ds+'T12:00:00');
+  tip.innerHTML=`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:3px">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div>${dg.slice(0,4).map(g=>`<div>${esc(g.title)}</div>`).join('')}${dg.length>4?`<div style="color:rgba(255,255,255,.5)">+${dg.length-4} autres</div>`:''}`;
+  tip.style.display='block';
+  tip.style.left=Math.min(e.clientX+12,window.innerWidth-210)+'px';
+  tip.style.top=Math.min(e.clientY+12,window.innerHeight-100)+'px';
+}
+function hideTip(){ document.getElementById('tooltip').style.display='none'; }
+
+// ─── STATS ───
+function renderStats(){
+  const total=games.length;
+  const done=games.filter(g=>g.status==='done').length;
+  const doing=games.filter(g=>g.status==='doing').length;
+  const totalHours=games.reduce((s,g)=>s+(g.hours||0),0);
+  const rated=games.filter(g=>g.rating);
+  const avgRating=rated.length?(rated.reduce((s,g)=>s+g.rating,0)/rated.length).toFixed(1):'—';
+  const genres=[...new Set(games.map(g=>g.genre).filter(Boolean))].slice(0,20);
+
+  // Per maker -> per console
+  let makerBlocks='';
+  MAKER_ORDER.forEach(mk=>{
+    const M=MAKERS[mk];
+    const makerGames=games.filter(g=>g.maker===mk);
+    if(!makerGames.length) return;
+    const byConsole={};
+    makerGames.forEach(g=>{
+      const c=g.console||'Autre';
+      if(!byConsole[c]) byConsole[c]=0;
+      byConsole[c]++;
+    });
+    const maxC=Math.max(...Object.values(byConsole));
+    const cOrder=[...M.consoles.filter(c=>byConsole[c]),...Object.keys(byConsole).filter(c=>!M.consoles.includes(c))];
+    makerBlocks+=`<div class="maker-stat-block">
+      <div class="maker-stat-head">
+        <div class="maker-bar" style="background:${M.color};height:16px"></div>
+        <div class="maker-stat-name">${M.label}</div>
+        <div class="maker-stat-total">${makerGames.length} jeu${makerGames.length>1?'x':''} · ${makerGames.reduce((s,g)=>s+(g.hours||0),0)}h</div>
+      </div>
+      ${cOrder.map(c=>`
+      <div class="console-bar-row">
+        <div class="console-bar-name">${esc(c)}</div>
+        <div class="console-bar-track"><div class="console-bar-fill" style="width:${byConsole[c]/maxC*100}%;background:${M.color}"></div></div>
+        <div class="console-bar-count">${byConsole[c]}</div>
+      </div>`).join('')}
+    </div>`;
+  });
+
+  document.getElementById('statsContent').innerHTML=`
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Jeux au total</div></div>
+    <div class="stat-card"><div class="stat-val">${done}</div><div class="stat-lbl">Terminés</div><div class="stat-sub">${total?Math.round(done/total*100):0}% de la bibliothèque</div></div>
+    <div class="stat-card"><div class="stat-val">${doing}</div><div class="stat-lbl">En cours</div></div>
+    <div class="stat-card"><div class="stat-val">${totalHours>0?totalHours+'h':'—'}</div><div class="stat-lbl">Heures totales</div></div>
+    <div class="stat-card"><div class="stat-val">${avgRating}</div><div class="stat-lbl">Note moyenne</div></div>
+    <div class="stat-card"><div class="stat-val">${games.filter(g=>g.status==='todo').length}</div><div class="stat-lbl">Dans le backlog</div></div>
+  </div>
+  <div class="section-title">Par constructeur & console</div>
+  ${makerBlocks||'<div class="empty-sub" style="color:var(--text3);font-size:12px">Aucune donnée pour le moment.</div>'}
+  ${genres.length?`<div class="section-title" style="margin-top:20px">Genres</div><div class="genre-chips">${genres.map(g=>`<div class="genre-chip">${esc(g)}</div>`).join('')}</div>`:''}
+  `;
+}
+
+// ─── OVERLAY / SWIPE / KEYBOARD ───
+function handleOverlayClick(e,id){
+  if(e.target===document.getElementById(id)){
+    if(id==='panelOverlay') closePanel();
+    else if(id==='modalOverlay') closeModal();
+    else if(id==='dayOverlay') closeDayPopup();
+  }
+}
+(function(){
+  let sy=0;
+  const p=document.getElementById('panelEl');
+  p.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});
+  p.addEventListener('touchend',e=>{ if(e.changedTouches[0].clientY-sy>70&&p.scrollTop<=0) closePanel(); },{passive:true});
+  const d=document.getElementById('dayPopupEl');
+  d.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});
+  d.addEventListener('touchend',e=>{ if(e.changedTouches[0].clientY-sy>60) closeDayPopup(); },{passive:true});
+})();
+document.addEventListener('keydown',e=>{
+  const typing=e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT';
+  if(!typing){
+    if(e.key==='Escape'){ closePanel(); closeModal(); closeDayPopup(); }
+    if(e.key==='n'||e.key==='N') openModal(null);
+    if(e.key==='f'||e.key==='F'){ e.preventDefault(); document.getElementById('searchInput').focus(); }
+  }
+});
+
+// ─── INIT ───
+renderCurrent();
+</script>
+</body>
+</html>
