@@ -127,14 +127,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .mday-lbl{font-size:8px;color:var(--text3);text-align:center;padding-bottom:2px;font-weight:600}
 .mday{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:var(--text);font-weight:500;transition:transform .1s;position:relative;z-index:2}
 .mday.past{color:var(--text)}.mday.future{color:#CCC}
-.mday.lv1{background:#FEF9E7;color:#8B7355}
-.mday.lv2{background:#FDF3C7;color:#7A6030}
-.mday.lv3{background:#F9E077;color:#5A4520;font-weight:700}
-.mday.lv4{background:var(--accent);color:#3A2E00;font-weight:700}
 .mday.today{outline:2px solid var(--text);outline-offset:1px}
 .mday:not(.future):hover{transform:scale(1.2);z-index:3;cursor:pointer}
 .bars-overlay{position:absolute;inset:0;pointer-events:none;z-index:1}
-.bar-seg{position:absolute;height:4px;border-radius:3px;pointer-events:auto;cursor:pointer;opacity:.7;transition:opacity .12s}
+.bar-seg{position:absolute;height:4px;border-radius:3px;pointer-events:auto;cursor:pointer;opacity:.85;transition:opacity .12s}
 .bar-seg:hover{opacity:1}
 .bar-seg.striped{background-image:repeating-linear-gradient(-45deg,transparent,transparent 2px,rgba(255,255,255,.3) 2px,rgba(255,255,255,.3) 4px)}
 .month-bar-legend{margin-top:6px;display:flex;flex-direction:column;gap:2px}
@@ -217,6 +213,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .mstar.on{color:var(--accent)}
 .modal-actions{display:flex;gap:8px;margin-top:20px}
 .status-disabled{opacity:.35;pointer-events:none}
+.session-row{display:flex;gap:6px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
+.session-row input{flex:1;min-width:0;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none}
+.session-row input:focus{border-color:var(--border2)}
+.session-row .session-arrow{color:var(--text3);font-size:11px;flex-shrink:0}
+.session-row .session-del{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Inter',sans-serif}
+.session-row .session-del:hover{color:#DC2626;border-color:#FECACA}
 
 /* ── DAY POPUP ── */
 .day-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;display:none;align-items:flex-end;justify-content:center}
@@ -426,15 +428,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <input type="date" id="mRelease">
       </div>
     </div>
-    <div class="fields-2">
-      <div class="field" id="mDateStartField">
-        <label>Date début</label>
-        <input type="date" id="mDateStart">
-      </div>
-      <div class="field" id="mDateEndField">
-        <label>Date fin</label>
-        <input type="date" id="mDateEnd">
-      </div>
+    <div class="field" id="mSessionsField">
+      <label>Périodes de jeu</label>
+      <div id="mSessions" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button type="button" onclick="addSessionRow()" class="btn-secondary" style="margin-top:6px;font-size:11px;width:100%">＋ Ajouter une période</button>
+      <div class="field-hint">Ajoute plusieurs périodes si tu reprends le jeu plus tard</div>
     </div>
     <div class="field">
       <label>Heures de jeu</label>
@@ -463,29 +461,46 @@ const MAKERS = {
   sony:      {label:'Sony',      color:'#003791', consoles:['PS5','PS4','PS3','PS2','PS1','PSP','PS Vita']},
   nintendo:  {label:'Nintendo',  color:'#E60012', consoles:['Switch 2','Switch','Wii U','Wii','GameCube','N64','SNES','NES','3DS','DS','GBA','Game Boy']},
   microsoft: {label:'Microsoft', color:'#107C10', consoles:['Xbox Series X|S','Xbox One','Xbox 360','Xbox']},
-  pc:        {label:'PC',        color:'#4A5568', consoles:['Steam','Epic Games','GOG','Battle.net','Autre launcher']},
-  sega:      {label:'Sega',      color:'#0089CF', consoles:['Dreamcast','Saturn','Mega Drive','Game Gear']},
-  mobile:    {label:'Mobile',    color:'#9333EA', consoles:['iOS','Android']},
-  other:     {label:'Autre',     color:'#888884', consoles:['Autre']},
+  other:     {label:'Tiers / Indé', color:'#6B7280', consoles:['Steam','Epic Games','GOG','Battle.net','PC (autre)','Dreamcast','Saturn','Mega Drive','Game Gear','iOS','Android','PS5','PS4','Switch 2','Switch','Xbox Series X|S','Xbox One','Autre']},
 };
-const MAKER_ORDER = ['sony','nintendo','microsoft','pc','sega','mobile','other'];
+const MAKER_ORDER = ['sony','nintendo','microsoft','other'];
 const STATUS_LABELS = {todo:'Backlog',doing:'En cours',done:'Terminé'};
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── STATE ───
-const LS = 'gamelog_v2';
+const LS = 'gamelog_v3';
 let games = (() => {
   try{
     let g = JSON.parse(localStorage.getItem(LS));
-    if(g) return g;
-    // Migration from v1 (plat -> maker/console)
-    const old = JSON.parse(localStorage.getItem('gamelog_v1'));
-    if(old){
+    if(g){
+      // Migrate removed makers to 'other'
+      g.forEach(x=>{ if(x.maker==='pc'||x.maker==='sega'||x.maker==='mobile') x.maker='other'; });
+      return g;
+    }
+    // Migrate from v2
+    const v2 = JSON.parse(localStorage.getItem('gamelog_v2'));
+    if(v2){
+      const migrated = v2.map(x=>{
+        if(!x.sessions){
+          x.sessions=[];
+          if(x.dateStart||x.dateEnd) x.sessions.push({start:x.dateStart||'',end:x.dateEnd||''});
+          delete x.dateStart; delete x.dateEnd;
+        }
+        return x;
+      });
+      localStorage.setItem(LS,JSON.stringify(migrated));
+      return migrated;
+    }
+    // Migrate from v1
+    const v1 = JSON.parse(localStorage.getItem('gamelog_v1'));
+    if(v1){
       const map = {ps:['sony','PS5'],xbox:['microsoft','Xbox Series X|S'],switch:['nintendo','Switch'],pc:['pc','Steam'],mobile:['mobile','iOS'],other:['other','Autre']};
-      const migrated = old.map(x=>{
+      const migrated = v1.map(x=>{
         const [maker,console_]=map[x.plat]||['other','Autre'];
-        const {plat,...rest}=x;
-        return {...rest,maker,console:console_};
+        const {plat,dateStart,dateEnd,...rest}=x;
+        const sessions=[];
+        if(dateStart||dateEnd) sessions.push({start:dateStart||'',end:dateEnd||''});
+        return {...rest,maker,console:console_,sessions};
       });
       localStorage.setItem(LS,JSON.stringify(migrated));
       return migrated;
@@ -499,12 +514,48 @@ function save(){ localStorage.setItem(LS,JSON.stringify(games)); }
 function today(){ return new Date().toISOString().split('T')[0]; }
 function fmt(d){ if(!d)return''; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Sessions helpers
+function getSessions(g){ return g.sessions||[]; }
+function lastSession(g){ const s=getSessions(g); return s.length?s[s.length-1]:null; }
+function hasOpenSession(g){ const ls=lastSession(g); return ls&&ls.start&&!ls.end; }
+function allSessionDates(g){
+  const dates=[];
+  getSessions(g).forEach(s=>{ if(s.start) dates.push(s.start); if(s.end) dates.push(s.end); });
+  return dates;
+}
 function activityDate(g){
-  if(g.status==='done') return g.dateEnd||g.dateStart||null;
-  if(g.status==='doing') return g.dateStart||null;
+  const ls=lastSession(g);
+  if(!ls) return null;
+  if(g.status==='done') return ls.end||ls.start||null;
+  if(g.status==='doing') return ls.start||null;
   return null;
 }
 function makerOf(g){ return MAKERS[g.maker]||MAKERS.other; }
+
+// Color shade: vary lightness for same-maker games in a month
+function shadeHex(hex, idx){
+  if(idx===0) return hex;
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  // Alternate lighter/darker
+  const steps=[0, 0.35, -0.25, 0.55, -0.4];
+  const f=steps[idx%steps.length];
+  const adj=(c,f)=>f>0?Math.round(c+(255-c)*f):Math.round(c*(1+f));
+  return `rgb(${adj(r,f)},${adj(g,f)},${adj(b,f)})`;
+}
+
+// Shade a hex color: idx=position among siblings, total=count of same-maker games
+function colorShade(hex, idx, total){
+  if(total<=1) return hex;
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  // Spread from -0.35 (darker) to +0.35 (lighter)
+  const t = total===1 ? 0 : (idx/(total-1))*2-1; // -1 to 1
+  let nr,ng,nb;
+  if(t>=0){ nr=r+(255-r)*t*0.35; ng=g+(255-g)*t*0.35; nb=b+(255-b)*t*0.35; }
+  else { nr=r*(1+t*0.35); ng=g*(1+t*0.35); nb=b*(1+t*0.35); }
+  const h=v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0');
+  return '#'+h(nr)+h(ng)+h(nb);
+}
 
 // ─── VIEWS ───
 const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',calendar:'Calendrier',stats:'Statistiques'};
@@ -671,18 +722,22 @@ function openPanel(id){
   } else { coverEl.style.display='none'; }
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
   document.getElementById('pHoursNum').textContent=g.hours||'—';
-  const chips=[
-    {lbl:'Statut',val:STATUS_LABELS[g.status]},
-    g.release?{lbl:'Sortie',val:fmt(g.release)}:null,
-    g.dateStart?{lbl:'Début',val:fmt(g.dateStart)}:null,
-    g.dateEnd?{lbl:'Fin',val:fmt(g.dateEnd)}:null,
-  ].filter(Boolean);
-  document.getElementById('pChips').innerHTML=chips.map(c=>`<div class="panel-chip"><div class="panel-chip-lbl">${c.lbl}</div><div class="panel-chip-val">${esc(c.val)}</div></div>`).join('');
+  // Chips: sessions
+  const sessions=getSessions(g);
+  let chipsHTML=`<div class="panel-chip"><div class="panel-chip-lbl">Statut</div><div class="panel-chip-val">${STATUS_LABELS[g.status]}</div></div>`;
+  if(g.release) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie</div><div class="panel-chip-val">${fmt(g.release)}</div></div>`;
+  sessions.forEach((s,i)=>{
+    const label=sessions.length>1?`Période ${i+1}`:'Période';
+    const val=`${fmt(s.start)||'?'} → ${s.end?fmt(s.end):'en cours'}`;
+    chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">${label}</div><div class="panel-chip-val">${val}</div></div>`;
+  });
+  document.getElementById('pChips').innerHTML=chipsHTML;
   document.getElementById('pNote').value=g.note||'';
   const isDone=g.status==='done',isDoing=g.status==='doing';
   document.getElementById('pActions').innerHTML=`
     <button class="btn-primary" onclick="setPanelStatus('done')" style="${isDone?'background:#15803D':''}">${isDone?'✓ Terminé':'Marquer terminé'}</button>
-    <button class="btn-doing" onclick="setPanelStatus('doing')" style="${isDoing?'background:#FED7AA':''}">${isDoing?'▶ En cours':'Commencer'}</button>
+    ${isDone?`<button class="btn-doing" onclick="resumeGame('${id}')">🔄 Reprendre</button>`
+      :`<button class="btn-doing" onclick="setPanelStatus('doing')" style="${isDoing?'background:#FED7AA':''}">${isDoing?'▶ En cours':'Commencer'}</button>`}
     <button class="btn-secondary" onclick="openModal('${id}')">Modifier</button>
     <button class="btn-danger" onclick="deleteGame('${id}')">Supprimer</button>`;
   document.getElementById('panelOverlay').classList.add('on');
@@ -690,10 +745,26 @@ function openPanel(id){
 function closePanel(){ document.getElementById('panelOverlay').classList.remove('on'); panelId=null; }
 function setPanelStatus(s){
   const g=games.find(x=>x.id===panelId); if(!g) return;
+  if(!g.sessions) g.sessions=[];
   g.status=s;
-  if(s==='done'&&!g.dateEnd) g.dateEnd=today();
-  if(s==='doing'&&!g.dateStart) g.dateStart=today();
+  if(s==='doing'){
+    // If no open session, start one
+    if(!hasOpenSession(g)) g.sessions.push({start:today(),end:''});
+  }
+  if(s==='done'){
+    // Close the last open session
+    const ls=lastSession(g);
+    if(ls&&!ls.end) ls.end=today();
+    else if(!g.sessions.length) g.sessions.push({start:today(),end:today()});
+  }
   save(); openPanel(panelId); renderCurrent();
+}
+function resumeGame(id){
+  const g=games.find(x=>x.id===id); if(!g) return;
+  if(!g.sessions) g.sessions=[];
+  g.status='doing';
+  g.sessions.push({start:today(),end:''});
+  save(); openPanel(id); renderCurrent();
 }
 function setPanelRating(r){
   const g=games.find(x=>x.id===panelId); if(!g) return;
@@ -723,15 +794,35 @@ function populateConsoles(selectedConsole){
 }
 function onModalStatusChange(){
   const s=document.getElementById('mStatus').value;
-  document.getElementById('mDateStartField').className='field'+(s==='todo'?' status-disabled':'');
-  document.getElementById('mDateEndField').className='field'+(s!=='done'?' status-disabled':'');
-  if(s==='todo'){ document.getElementById('mDateStart').value=''; document.getElementById('mDateEnd').value=''; }
-  if(s==='doing'){ document.getElementById('mDateEnd').value=''; if(!document.getElementById('mDateStart').value) document.getElementById('mDateStart').value=today(); }
-  if(s==='done'&&!document.getElementById('mDateEnd').value) document.getElementById('mDateEnd').value=today();
+  const sf=document.getElementById('mSessionsField');
+  sf.className='field'+(s==='todo'?' status-disabled':'');
+  if(s==='todo') document.getElementById('mSessions').innerHTML='';
+}
+function addSessionRow(startVal,endVal){
+  const container=document.getElementById('mSessions');
+  const row=document.createElement('div');
+  row.className='session-row';
+  row.innerHTML=`<input type="date" value="${startVal||''}" placeholder="Début">
+    <span class="session-arrow">→</span>
+    <input type="date" value="${endVal||''}" placeholder="Fin (vide si en cours)">
+    <button type="button" class="session-del" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(row);
+}
+function getModalSessions(){
+  const rows=document.querySelectorAll('#mSessions .session-row');
+  const sessions=[];
+  rows.forEach(row=>{
+    const inputs=row.querySelectorAll('input[type=date]');
+    const start=inputs[0]?.value||'';
+    const end=inputs[1]?.value||'';
+    if(start||end) sessions.push({start,end});
+  });
+  return sessions;
 }
 function openModal(id){
   modalRating=0;
   populateMakers();
+  document.getElementById('mSessions').innerHTML='';
   if(id){
     const g=games.find(x=>x.id===id); if(!g) return;
     document.getElementById('modalTitle').textContent='Modifier';
@@ -743,9 +834,8 @@ function openModal(id){
     document.getElementById('mStudio').value=g.studio||'';
     document.getElementById('mRelease').value=g.release||'';
     document.getElementById('mGenre').value=g.genre||'';
-    document.getElementById('mDateStart').value=g.dateStart||'';
-    document.getElementById('mDateEnd').value=g.dateEnd||'';
     document.getElementById('mHours').value=g.hours||'';
+    getSessions(g).forEach(s=>addSessionRow(s.start,s.end));
     modalRating=g.rating||0;
     document.getElementById('modalOverlay').dataset.editId=id;
   } else {
@@ -758,8 +848,6 @@ function openModal(id){
     document.getElementById('mStudio').value='';
     document.getElementById('mRelease').value='';
     document.getElementById('mGenre').value='';
-    document.getElementById('mDateStart').value='';
-    document.getElementById('mDateEnd').value='';
     document.getElementById('mHours').value='';
     delete document.getElementById('modalOverlay').dataset.editId;
   }
@@ -785,6 +873,7 @@ function saveGame(){
   const title=document.getElementById('mTitle').value.trim();
   if(!title){ document.getElementById('mTitle').focus(); return; }
   const status=document.getElementById('mStatus').value;
+  const sessions=status==='todo'?[]:getModalSessions();
   const data={
     title,
     cover:document.getElementById('mCover').value.trim(),
@@ -794,8 +883,7 @@ function saveGame(){
     studio:document.getElementById('mStudio').value.trim(),
     release:document.getElementById('mRelease').value,
     genre:document.getElementById('mGenre').value.trim(),
-    dateStart:status==='todo'?'':document.getElementById('mDateStart').value,
-    dateEnd:status!=='done'?'':document.getElementById('mDateEnd').value,
+    sessions,
     hours:parseFloat(document.getElementById('mHours').value)||0,
     rating:modalRating,
   };
@@ -809,32 +897,46 @@ function saveGame(){
 function renderCalendar(){
   const y=String(calYear);
   const yi=calYear;
-  const allYears=new Set(games.map(g=>{const d=activityDate(g);return d?d.slice(0,4):null;}).filter(Boolean));
-  games.forEach(g=>{ if(g.dateStart) allYears.add(g.dateStart.slice(0,4)); });
+  const allYears=new Set();
   allYears.add(String(new Date().getFullYear()));
+  games.forEach(g=>{
+    getSessions(g).forEach(s=>{ if(s.start) allYears.add(s.start.slice(0,4)); if(s.end) allYears.add(s.end.slice(0,4)); });
+  });
   const years=[...allYears].sort((a,b)=>b-a);
   const todayStr=today();
   const dayMap={};
+  // Build dayMap from sessions
   games.forEach(g=>{
-    const d=activityDate(g);
-    if(d&&d.startsWith(y)){ if(!dayMap[d])dayMap[d]=[]; dayMap[d].push(g); }
+    getSessions(g).forEach(s=>{
+      const gs=s.start||s.end||'';
+      const ge=s.end||(hasOpenSession(g)?todayStr:s.start)||'';
+      if(!gs) return;
+      // Add activity on start and end dates that are in this year
+      [gs,ge].forEach(d=>{ if(d&&d.startsWith(y)){ if(!dayMap[d])dayMap[d]=[]; if(!dayMap[d].includes(g)) dayMap[d].push(g); }});
+    });
   });
   const activeDays=Object.keys(dayMap).length;
-  const yearDone=games.filter(g=>g.status==='done'&&(activityDate(g)||'').startsWith(y)).length;
-  const yearHours=games.filter(g=>(activityDate(g)||'').startsWith(y)).reduce((s,g)=>s+(g.hours||0),0);
-  function level(c){ return c===0?0:c===1?1:c===2?2:c<=4?3:4; }
+  const yearDone=games.filter(g=>g.status==='done'&&getSessions(g).some(s=>(s.end||'').startsWith(y))).length;
+  const yearHours=games.filter(g=>getSessions(g).some(s=>(s.start||'').startsWith(y)||(s.end||'').startsWith(y))).reduce((s,g)=>s+(g.hours||0),0);
 
-  function gamesForMonth(m){
+  // For each month: find sessions (not games) that overlap
+  function sessionsForMonth(m){
     const ms=`${yi}-${String(m+1).padStart(2,'0')}`;
     const mStart=ms+'-01';
     const lastDay=new Date(yi,m+1,0).getDate();
     const mEnd=ms+'-'+String(lastDay).padStart(2,'0');
-    return games.filter(g=>{
-      const s=g.dateStart||null, e=g.dateEnd||null;
-      if(!s&&!e) return false;
-      const gs=s||e, ge=e||(g.status==='doing'?todayStr:s);
-      return gs<=mEnd && ge>=mStart;
-    }).sort((a,b)=>(a.dateStart||a.dateEnd||'').localeCompare(b.dateStart||b.dateEnd||''));
+    const results=[];
+    games.forEach(g=>{
+      const M=makerOf(g);
+      getSessions(g).forEach(s=>{
+        const gs=s.start||s.end||'';
+        const ge=s.end||(g.status==='doing'&&!s.end?todayStr:s.start)||'';
+        if(!gs) return;
+        if(gs<=mEnd && ge>=mStart) results.push({g,s,gs,ge,M});
+      });
+    });
+    results.sort((a,b)=>a.gs.localeCompare(b.gs));
+    return results;
   }
 
   let html=`
@@ -858,24 +960,37 @@ function renderCalendar(){
     const isCur=ms===todayStr.slice(0,7);
     const mStart=ms+'-01';
     const mEnd=ms+'-'+String(totalDaysMonth).padStart(2,'0');
-    const monthGames=gamesForMonth(m);
+    const monthSessions=sessionsForMonth(m);
+    // Unique games for legend
+    const monthGameIds=[...new Set(monthSessions.map(x=>x.g.id))];
+    const monthGames=monthGameIds.map(id=>games.find(g=>g.id===id)).filter(Boolean);
+
+    // Assign shade index per maker (different games same maker get different shades)
+    const makerGameIdx={};
+    const gameShade={};
+    monthSessions.forEach(x=>{
+      const mk=x.g.maker||'other';
+      if(!makerGameIdx[mk]) makerGameIdx[mk]={};
+      if(!(x.g.id in makerGameIdx[mk])){
+        makerGameIdx[mk][x.g.id]=Object.keys(makerGameIdx[mk]).length;
+      }
+      gameShade[x.g.id]=makerGameIdx[mk][x.g.id];
+    });
 
     // Build bar segment data (split per week row)
     let barSegs=[];
-    monthGames.forEach((g,gi)=>{
-      const M=makerOf(g);
-      const gs=g.dateStart||g.dateEnd;
-      const ge=g.dateEnd||(g.status==='doing'?todayStr:g.dateStart);
-      const clS=gs<mStart?mStart:gs;
-      const clE=ge>mEnd?mEnd:ge;
+    monthSessions.forEach((x,si)=>{
+      const clS=x.gs<mStart?mStart:x.gs;
+      const clE=x.ge>mEnd?mEnd:x.ge;
       let dayS=parseInt(clS.slice(8)), dayE=parseInt(clE.slice(8));
-      // Split by week rows
+      const shade=gameShade[x.g.id]||0;
+      const barColor=shadeHex(x.M.color, shade);
       let d=dayS;
       while(d<=dayE){
         const lp=startDow+(d-1);
         const colsLeft=6-(lp%7);
         const segEnd=Math.min(dayE, d+colsLeft);
-        barSegs.push({ds:d, de:segEnd, lane:gi, color:M.color, id:g.id, title:g.title, doing:g.status==='doing'});
+        barSegs.push({ds:d, de:segEnd, lane:si, color:barColor, id:x.g.id, title:x.g.title, doing:x.g.status==='doing'&&!x.s.end});
         d=segEnd+1;
       }
     });
@@ -892,17 +1007,19 @@ function renderCalendar(){
           const ds=`${ms}-${String(n).padStart(2,'0')}`;
           const cnt=(dayMap[ds]||[]).length;
           const fut=ds>todayStr,isT=ds===todayStr;
-          const lv=fut?0:level(cnt);
-          const cls=['mday',lv?'lv'+lv:(fut?'future':'past'),isT?'today':''].filter(Boolean).join(' ');
+          const cls=['mday',fut?'future':'past',isT?'today':''].filter(Boolean).join(' ');
           return `<div class="${cls}" data-day="${n}"${cnt&&!fut?` onclick="showDayPopup('${ds}')" onmouseenter="showTip(event,'${ds}')" onmouseleave="hideTip()"`:''}>${n}</div>`;
         }).join('')}
         <div class="bars-overlay"></div>
       </div>
       ${monthGames.length?`<div class="month-bar-legend">
-        ${monthGames.map(g=>`<div class="month-bar-legend-item" onclick="openPanel('${g.id}')">
-          <div class="month-bar-legend-dot" style="background:${makerOf(g).color}"></div>
+        ${monthGames.map(g=>{
+          const shade=gameShade[g.id]||0;
+          const col=shadeHex(makerOf(g).color, shade);
+          return `<div class="month-bar-legend-item" onclick="openPanel('${g.id}')">
+          <div class="month-bar-legend-dot" style="background:${col}"></div>
           <div class="month-bar-legend-name">${esc(g.title)}</div>
-        </div>`).join('')}
+        </div>`;}).join('')}
       </div>`:''}
     </div>`;
   }
