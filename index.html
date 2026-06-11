@@ -50,7 +50,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .main-title{font-size:18px;font-weight:700;letter-spacing:-.5px;flex:1}
 .search-wrap{position:relative;flex:1;max-width:280px}
 .search-wrap input{width:100%;padding:7px 12px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border .15s}
-.search-wrap input:focus{border-color:var(--border2);background:#fff}
+.search-wrap input:focus{border-color:var(--border2);background:var(--bg2)}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none}
 .main-content{padding:20px 24px;padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
 
@@ -258,7 +258,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .panel-hours-num{font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1}
 .panel-hours-lbl{font-size:11px;color:var(--text3);font-weight:500;margin-top:2px}
 .panel-note{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;outline:none;min-height:68px;margin-bottom:14px;line-height:1.5}
-.panel-note:focus{border-color:var(--border2);background:#fff}
+.panel-note:focus{border-color:var(--border2);background:var(--bg2)}
 .panel-actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn-primary{padding:9px 16px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;flex:1;transition:opacity .15s}
 .btn-primary:hover{opacity:.8}
@@ -278,7 +278,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .field{margin-bottom:14px}
 .field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
-.field input:focus,.field select:focus{border-color:var(--border2);background:#fff}
+.field input:focus,.field select:focus{border-color:var(--border2);background:var(--bg2)}
 .field-hint{font-size:10px;color:var(--text3);margin-top:3px}
 .fields-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .modal-stars{display:flex;gap:4px;padding:4px 0}
@@ -292,6 +292,59 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .session-row .session-arrow{color:var(--text3);font-size:11px;flex-shrink:0}
 .session-row .session-del{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Inter',sans-serif}
 .session-row .session-del:hover{color:#DC2626;border-color:#FECACA}
+.session-row .session-hours{flex:0 0 52px;text-align:center}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--bg2);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);z-index:300;opacity:0;transition:all .25s;pointer-events:none;max-width:calc(100vw - 32px)}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+.toast-action{background:transparent;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;padding:0;flex-shrink:0}
+
+/* ── BACKUP BANNER ── */
+.backup-banner{display:flex;align-items:center;gap:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:16px}
+.backup-banner button{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border-radius:7px;padding:5px 12px}
+.backup-banner .bb-export{background:#92400E;color:#fff;border:none}
+.backup-banner .bb-later{background:transparent;color:#92400E;border:1px solid #FDE68A}
+[data-theme="dark"] .backup-banner{background:#3a2e10;border-color:#6b5518;color:#FDE68A}
+[data-theme="dark"] .backup-banner .bb-export{background:#FDE68A;color:#3a2e10}
+[data-theme="dark"] .backup-banner .bb-later{color:#FDE68A;border-color:#6b5518}
+
+/* ── NEXT UP (backlog) ── */
+.nextup-section{margin-bottom:28px}
+.nextup-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.nextup-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.nextup-est{font-size:11px;color:var(--text3);margin-left:auto}
+.backlog-est-banner{font-size:12px;color:var(--text3);margin-bottom:16px}
+.backlog-est-banner b{color:var(--text2)}
+.detail-badge.est{background:#E0F2FE;color:#0369A1}
+
+/* ── THEME TOGGLE ── */
+.theme-toggle{width:100%;margin-top:8px;padding:7px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text2);cursor:pointer;transition:all .12s}
+.theme-toggle:hover{border-color:var(--border2);color:var(--text)}
+.theme-toggle-mobile{display:none;background:transparent;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;font-size:15px;cursor:pointer;flex-shrink:0;align-items:center;justify-content:center}
+
+/* ── DARK THEME ── */
+[data-theme="dark"]{
+  --bg:#131313;--bg2:#1D1D1D;--bg3:#282828;
+  --border:#2E2E2E;--border2:#454545;
+  --text:#F2F2F0;--text2:#B5B5B0;--text3:#7A7A75;
+  --done-bg:#10331E;--done-text:#4ADE80;
+  --doing-bg:#3A2410;--doing-text:#FB923C;
+  --todo-bg:#262626;--todo-text:#9CA3AF;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.3);
+}
+[data-theme="dark"] .nav-item.on{background:var(--accent);color:#111}
+[data-theme="dark"] .nav-item.on .nav-badge{background:rgba(0,0,0,.15);color:rgba(0,0,0,.6)}
+[data-theme="dark"] .filter-chip.on{background:var(--accent);color:#111;border-color:var(--accent)}
+[data-theme="dark"] .add-btn,[data-theme="dark"] .empty-cta{background:var(--accent);color:#111}
+[data-theme="dark"] .toast{background:#F2F2F0;color:#111}
+[data-theme="dark"] .toast-action{color:#B45309}
+[data-theme="dark"] .btn-primary{background:var(--accent);color:#111}
+[data-theme="dark"] .cal-year-btn.on{background:var(--accent);color:#111;border-color:var(--accent)}
+[data-theme="dark"] .tooltip{background:#F2F2F0;color:#111}
+[data-theme="dark"] .tooltip div{color:#111}
+[data-theme="dark"] .star-mini{color:#3a3a3a}
+[data-theme="dark"] .star-mini.on{color:var(--accent)}
 
 /* ── DAY POPUP ── */
 .day-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;display:none;align-items:flex-end;justify-content:center}
@@ -315,6 +368,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 @media(max-width:640px){
   .sidebar{display:none}
   .mobile-nav{display:flex}
+  .theme-toggle-mobile{display:flex}
   .main-header{padding:14px 16px 12px}
   .main-content{padding:14px 16px;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
   .cards-grid{grid-template-columns:1fr}
@@ -367,6 +421,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="exportData()">↓ Exporter</button>
         <button class="btn-secondary" style="flex:1;font-size:11px;padding:7px" onclick="document.getElementById('importFile').click()">↑ Importer</button>
       </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Mode sombre</button>
     </div>
   </aside>
 
@@ -378,9 +433,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <span class="search-icon">🔍</span>
         <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderCurrent()">
       </div>
+      <button class="theme-toggle-mobile" id="themeToggleMobile" onclick="toggleTheme()">🌙</button>
       <button class="add-btn" style="width:auto;padding:7px 14px;font-size:12px" onclick="openModal(null)">＋</button>
     </div>
     <div class="main-content">
+      <div class="backup-banner" id="backupBanner" style="display:none"></div>
       <div class="view on" id="view-library">
         <div class="filter-bar" id="libFilters">
           <button class="filter-chip on" data-maker="all" onclick="setMakerFilter('all',this)">Tous</button>
@@ -584,9 +641,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <button type="button" onclick="addSessionRow()" class="btn-secondary" style="margin-top:6px;font-size:11px;width:100%">＋ Ajouter une période</button>
       <div class="field-hint">Ajoute plusieurs périodes si tu reprends le jeu plus tard</div>
     </div>
-    <div class="field">
-      <label>Heures de jeu</label>
-      <input type="number" id="mHours" placeholder="Ex: 42" min="0" step="0.5">
+    <div class="fields-2">
+      <div class="field">
+        <label>Heures de jeu (total)</label>
+        <input type="number" id="mHours" placeholder="Ex: 42" min="0" step="0.5">
+        <div class="field-hint">Ignoré si tu renseignes les heures par période</div>
+      </div>
+      <div class="field">
+        <label>Durée estimée (h)</label>
+        <input type="number" id="mEstHours" placeholder="Ex: 30" min="0" step="0.5">
+        <div class="field-hint">Temps prévu pour le finir (style HowLongToBeat)</div>
+      </div>
     </div>
     <div class="field">
       <label>Note (1–5)</label>
@@ -607,6 +672,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
 <script>
 // ─── MAKERS & CONSOLES ───
@@ -667,8 +733,11 @@ let games = (() => {
 })();
 let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
 
-function save(){ localStorage.setItem(LS,JSON.stringify(games)); }
-function today(){ return new Date().toISOString().split('T')[0]; }
+function save(){
+  try{ localStorage.setItem(LS,JSON.stringify(games)); }
+  catch(err){ showToast('⚠️ Sauvegarde impossible (stockage plein ou bloqué). Exporte tes données !', null, 8000); }
+}
+function today(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmt(d){ if(!d)return''; const[y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -689,6 +758,31 @@ function activityDate(g){
   return null;
 }
 function makerOf(g){ return MAKERS[g.maker]||MAKERS.other; }
+
+// Heures : somme des heures par session si renseignées, sinon le total global
+function sessionHoursSum(g){ return getSessions(g).reduce((s,x)=>s+(parseFloat(x.hours)||0),0); }
+function totalHours(g){ const sh=sessionHoursSum(g); return sh>0?sh:(g.hours||0); }
+function hoursInYear(g, yr){
+  // Heures des sessions chevauchant l'année (uniquement si renseignées par session)
+  const ys=yr+'-01-01', ye=yr+'-12-31', todayStr=today();
+  return getSessions(g).reduce((sum,s)=>{
+    if(!(parseFloat(s.hours)>0)) return sum;
+    const gs=s.start||s.end||'';
+    const ge=s.end||(g.status==='doing'&&!s.end?todayStr:s.start)||'';
+    return (gs&&gs<=ye&&ge>=ys)?sum+parseFloat(s.hours):sum;
+  },0);
+}
+
+// ─── TOAST ───
+let toastTimer=null;
+function showToast(msg, actionHTML, duration){
+  const t=document.getElementById('toast');
+  t.innerHTML=`<span>${msg}</span>${actionHTML||''}`;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(hideToast, duration||5000);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('on'); }
 
 // ─── VIEWS ───
 const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',releases:'Prochaines sorties',calendar:'Calendrier',stats:'Statistiques'};
@@ -823,7 +917,32 @@ function renderStatusView(viewId,status){
     return true;
   });
   const msgs={todo:'Ton backlog est vide.',doing:'Aucun jeu en cours.',done:'Aucun jeu terminé pour le moment.'};
-  document.getElementById(viewId+'Content').innerHTML = filtered.length?hierarchyHTML(filtered):emptyHTML('',msgs[status]);
+  if(!filtered.length){
+    document.getElementById(viewId+'Content').innerHTML = emptyHTML('',msgs[status]);
+    return;
+  }
+  let html='';
+  if(status==='todo'){
+    // Total estimé du backlog
+    const est=filtered.reduce((s,g)=>s+(g.estHours||0),0);
+    const estCount=filtered.filter(g=>g.estHours).length;
+    if(est>0){
+      html+=`<div class="backlog-est-banner">⏳ Ton backlog représente environ <b>${est}h</b> de jeu${estCount<filtered.length?` (${estCount}/${filtered.length} jeux estimés)`:''}.</div>`;
+    }
+    // À jouer ensuite : priorité haute
+    const nextUp=filtered.filter(g=>g.priority==='high');
+    if(nextUp.length){
+      html+=`<div class="nextup-section">
+        <div class="nextup-head">
+          <div class="nextup-title">🎯 À jouer ensuite</div>
+          <div class="nextup-est">${nextUp.length} jeu${nextUp.length>1?'x':''} en priorité haute</div>
+        </div>
+        <div class="cards-grid">${nextUp.map(g=>gameCardHTML(g)).join('')}</div>
+      </div>`;
+    }
+  }
+  html+=hierarchyHTML(filtered);
+  document.getElementById(viewId+'Content').innerHTML=html;
 }
 
 function emptyHTML(title,sub){
@@ -846,10 +965,12 @@ function gameCardHTML(g){
     </div>
     <div class="game-card-bottom">
       <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+      ${g.status==='todo'&&g.priority?`<span class="detail-badge priority-${g.priority}">${g.priority==='high'?'🔥 ':''}${PRIORITY_LABELS[g.priority]}</span>`:''}
       ${g.parentId?`<span class="detail-badge dlc">DLC</span>`:''}
       ${g.completion?`<span class="detail-badge completion">${COMPLETION_LABELS[g.completion]||g.completion}</span>`:''}
       ${g.ownership?`<span class="detail-badge ownership">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
-      ${g.hours?`<span class="hours-badge">🕒 ${g.hours}h</span>`:''}
+      ${totalHours(g)?`<span class="hours-badge">🕒 ${totalHours(g)}h</span>`:''}
+      ${g.status==='todo'&&g.estHours?`<span class="detail-badge est">⏳ ~${g.estHours}h</span>`:''}
       ${stars}
     </div>
     </div>
@@ -873,7 +994,7 @@ function openPanel(id){
     coverEl.onerror=function(){ this.style.display='none'; };
   } else { coverEl.style.display='none'; }
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
-  document.getElementById('pHoursNum').textContent=g.hours||'—';
+  document.getElementById('pHoursNum').textContent=totalHours(g)||'—';
   // Chips
   const sessions=getSessions(g);
   let chipsHTML=`<div class="panel-chip"><div class="panel-chip-lbl">Statut</div><div class="panel-chip-val">${STATUS_LABELS[g.status]}</div></div>`;
@@ -881,6 +1002,7 @@ function openPanel(id){
   if(g.completion) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Complétion</div><div class="panel-chip-val">${COMPLETION_LABELS[g.completion]||g.completion}</div></div>`;
   if(g.format) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Format</div><div class="panel-chip-val">${FORMAT_LABELS[g.format]||g.format}</div></div>`;
   if(g.priority) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Priorité</div><div class="panel-chip-val">${PRIORITY_LABELS[g.priority]||g.priority}</div></div>`;
+  if(g.estHours) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Durée estimée</div><div class="panel-chip-val">~${g.estHours}h</div></div>`;
   if(g.release) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie</div><div class="panel-chip-val">${fmt(g.release)}</div></div>`;
   sessions.forEach((s,i)=>{
     const label=sessions.length>1?`Période ${i+1}`:'Période';
@@ -944,10 +1066,20 @@ function savePanelNote(){
   const g=games.find(x=>x.id===panelId); if(!g) return;
   g.note=document.getElementById('pNote').value; save();
 }
+let lastDeleted=null;
 function deleteGame(id){
-  if(!confirm('Supprimer ce jeu ?')) return;
-  games=games.filter(x=>x.id!==id);
+  const idx=games.findIndex(x=>x.id===id);
+  if(idx===-1) return;
+  lastDeleted={game:games[idx], index:idx};
+  games.splice(idx,1);
   save(); closePanel(); renderCurrent();
+  showToast(`« ${esc(lastDeleted.game.title)} » supprimé`, `<button class="toast-action" onclick="undoDelete()">Annuler</button>`, 6000);
+}
+function undoDelete(){
+  if(!lastDeleted) return;
+  games.splice(Math.min(lastDeleted.index,games.length),0,lastDeleted.game);
+  lastDeleted=null;
+  save(); renderCurrent(); hideToast();
 }
 
 // ─── MODAL ───
@@ -984,13 +1116,14 @@ function onModalStatusChange(){
     addSessionRow(today(), s==='done'?today():'');
   }
 }
-function addSessionRow(startVal,endVal){
+function addSessionRow(startVal,endVal,hoursVal){
   const container=document.getElementById('mSessions');
   const row=document.createElement('div');
   row.className='session-row';
   row.innerHTML=`<input type="date" value="${startVal||''}" placeholder="Début">
     <span class="session-arrow">→</span>
     <input type="date" value="${endVal||''}" placeholder="Fin (vide si en cours)">
+    <input type="number" class="session-hours" value="${hoursVal||''}" placeholder="h" min="0" step="0.5" title="Heures jouées sur cette période">
     <button type="button" class="session-del" onclick="this.parentElement.remove()">✕</button>`;
   container.appendChild(row);
 }
@@ -998,10 +1131,11 @@ function getModalSessions(){
   const rows=document.querySelectorAll('#mSessions .session-row');
   const sessions=[];
   rows.forEach(row=>{
-    const inputs=row.querySelectorAll('input[type=date]');
-    const start=inputs[0]?.value||'';
-    const end=inputs[1]?.value||'';
-    if(start||end) sessions.push({start,end});
+    const dates=row.querySelectorAll('input[type=date]');
+    const start=dates[0]?.value||'';
+    const end=dates[1]?.value||'';
+    const hours=parseFloat(row.querySelector('.session-hours')?.value)||0;
+    if(start||end||hours) sessions.push({start,end,hours});
   });
   return sessions;
 }
@@ -1031,7 +1165,8 @@ function openModal(id, tab){
     document.getElementById('mCompletion').value=g.completion||'';
     document.getElementById('mPriority').value=g.priority||'';
     document.getElementById('mHours').value=g.hours||'';
-    getSessions(g).forEach(s=>addSessionRow(s.start,s.end));
+    document.getElementById('mEstHours').value=g.estHours||'';
+    getSessions(g).forEach(s=>addSessionRow(s.start,s.end,s.hours));
     modalRating=g.rating||0;
     document.getElementById('modalOverlay').dataset.editId=id;
   } else {
@@ -1049,6 +1184,7 @@ function openModal(id, tab){
     document.getElementById('mCompletion').value='';
     document.getElementById('mPriority').value='';
     document.getElementById('mHours').value='';
+    document.getElementById('mEstHours').value='';
     delete document.getElementById('modalOverlay').dataset.editId;
   }
   setModalRating(modalRating);
@@ -1095,6 +1231,7 @@ function saveGame(){
     parentId:document.getElementById('mParent').value||'',
     sessions,
     hours:parseFloat(document.getElementById('mHours').value)||0,
+    estHours:parseFloat(document.getElementById('mEstHours').value)||0,
     rating:modalRating,
   };
   const editId=document.getElementById('modalOverlay').dataset.editId;
@@ -1216,7 +1353,7 @@ function renderCalendar(){
   });
   const activeDays=Object.keys(dayMap).length;
   const yearDone=games.filter(g=>g.status==='done'&&getSessions(g).some(s=>(s.end||'').startsWith(y))).length;
-  const yearHours=games.filter(g=>getSessions(g).some(s=>(s.start||'').startsWith(y)||(s.end||'').startsWith(y))).reduce((s,g)=>s+(g.hours||0),0);
+  const yearHours=games.reduce((sum,g)=>sum+hoursInYear(g,y),0);
 
   // For each month: find sessions (not games) that overlap
   function sessionsForMonth(m){
@@ -1375,7 +1512,7 @@ function positionAllBars(){
       const left=ps.l;
       const width=pe.l+pe.w-ps.l;
       const top=ps.t+ps.h-barH-gap-(b.lane*(barH+gap+1));
-      return `<div class="bar-seg ${b.doing?'striped':''}" style="left:${left}px;top:${top}px;width:${width}px;height:${barH}px;background:${b.color}" onclick="event.stopPropagation();openPanel('${b.id}')" title="${b.title}"></div>`;
+      return `<div class="bar-seg ${b.doing?'striped':''}" style="left:${left}px;top:${top}px;width:${width}px;height:${barH}px;background:${b.color}" onclick="event.stopPropagation();openPanel('${b.id}')" title="${esc(b.title)}"></div>`;
     }).join('');
   });
 }
@@ -1400,7 +1537,7 @@ function showTip(e,ds){
   if(!dg.length) return;
   const tip=document.getElementById('tooltip');
   const dt=new Date(ds+'T12:00:00');
-  tip.innerHTML=`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:3px">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div>${dg.slice(0,4).map(g=>`<div>${esc(g.title)}</div>`).join('')}${dg.length>4?`<div style="color:rgba(255,255,255,.5)">+${dg.length-4} autres</div>`:''}`;
+  tip.innerHTML=`<div style="font-size:10px;opacity:.6;margin-bottom:3px">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div>${dg.slice(0,4).map(g=>`<div>${esc(g.title)}</div>`).join('')}${dg.length>4?`<div style="opacity:.5">+${dg.length-4} autres</div>`:''}`;
   tip.style.display='block';
   tip.style.left=Math.min(e.clientX+12,window.innerWidth-210)+'px';
   tip.style.top=Math.min(e.clientY+12,window.innerHeight-100)+'px';
@@ -1435,7 +1572,8 @@ function renderStats(){
   const done=fg.filter(g=>g.status==='done').length;
   const doing=fg.filter(g=>g.status==='doing').length;
   const backlog=fg.filter(g=>g.status==='todo').length;
-  const totalHours=fg.reduce((s,g)=>s+(g.hours||0),0);
+  const hoursOf=g=>sy?hoursInYear(g,sy):totalHours(g);
+  const statHours=fg.reduce((s,g)=>s+hoursOf(g),0);
   const rated=fg.filter(g=>g.rating);
   const avgRating=rated.length?(rated.reduce((s,g)=>s+g.rating,0)/rated.length).toFixed(1):'—';
 
@@ -1451,9 +1589,9 @@ function renderStats(){
   </svg>`;
 
   // Top rated (max 5)
-  const topRated=[...fg].filter(g=>g.rating).sort((a,b)=>b.rating-a.rating||(b.hours||0)-(a.hours||0)).slice(0,5);
+  const topRated=[...fg].filter(g=>g.rating).sort((a,b)=>b.rating-a.rating||totalHours(b)-totalHours(a)).slice(0,5);
   // Most played (max 5)
-  const topPlayed=[...fg].filter(g=>g.hours).sort((a,b)=>b.hours-a.hours).slice(0,5);
+  const topPlayed=[...fg].filter(g=>hoursOf(g)).sort((a,b)=>hoursOf(b)-hoursOf(a)).slice(0,5);
   // Recent completions (max 5)
   const recentDone=[...fg].filter(g=>g.status==='done').sort((a,b)=>{
     const da=lastSession(a), db=lastSession(b);
@@ -1499,7 +1637,7 @@ function renderStats(){
       <div class="maker-stat-head">
         <div class="maker-bar" style="background:${M.color};height:16px"></div>
         <div class="maker-stat-name">${M.label}</div>
-        <div class="maker-stat-total">${makerGames.length} jeu${makerGames.length>1?'x':''} · ${makerGames.reduce((s,g)=>s+(g.hours||0),0)}h</div>
+        <div class="maker-stat-total">${makerGames.length} jeu${makerGames.length>1?'x':''} · ${makerGames.reduce((s,g)=>s+hoursOf(g),0)}h</div>
       </div>
       ${cOrder.map(c=>`<div class="console-bar-row">
         <div class="console-bar-name">${esc(c)}</div>
@@ -1542,7 +1680,7 @@ function renderStats(){
           <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?doing/total*100:0}%;background:#C2410C"></div></div>
         </div>
         <div class="stat-mini">
-          <div class="stat-mini-val">${totalHours>0?totalHours+'h':'—'}</div>
+          <div class="stat-mini-val">${statHours>0?statHours+'h':'—'}</div>
           <div class="stat-mini-lbl">Heures jouées</div>
         </div>
         <div class="stat-mini">
@@ -1562,7 +1700,7 @@ function renderStats(){
   <div class="top-games">${topRated.map((g,i)=>topGameHTML(g,i+1,starsHTML(g.rating))).join('')}</div>`:''}
 
   ${topPlayed.length?`<div class="section-title">Plus joués</div>
-  <div class="top-games">${topPlayed.map((g,i)=>topGameHTML(g,i+1,`<div class="top-game-val">${g.hours}h</div>`)).join('')}</div>`:''}
+  <div class="top-games">${topPlayed.map((g,i)=>topGameHTML(g,i+1,`<div class="top-game-val">${hoursOf(g)}h</div>`)).join('')}</div>`:''}
 
   ${recentDone.length?`<div class="section-title">Derniers terminés</div>
   <div class="top-games">${recentDone.map((g,i)=>{
@@ -1600,6 +1738,9 @@ function exportData(){
   a.download=`gamelog-${today()}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  try{ localStorage.setItem('gamelog_lastExport',String(Date.now())); }catch{}
+  checkBackupReminder();
+  showToast('✓ Bibliothèque exportée');
 }
 function importData(e){
   const file=e.target.files[0];
@@ -1655,8 +1796,51 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ─── THÈME ───
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  document.querySelector('meta[name=theme-color]').content=t==='dark'?'#131313':'#F7F7F5';
+  const lbl=t==='dark'?'☀️ Mode clair':'🌙 Mode sombre';
+  const tg=document.getElementById('themeToggle'); if(tg) tg.textContent=lbl;
+  const tgm=document.getElementById('themeToggleMobile'); if(tgm) tgm.textContent=t==='dark'?'☀️':'🌙';
+}
+function toggleTheme(){
+  const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  try{ localStorage.setItem('gamelog_theme',t); }catch{}
+  applyTheme(t);
+}
+(function(){
+  let t='light';
+  try{ t=localStorage.getItem('gamelog_theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }catch{}
+  applyTheme(t);
+})();
+
+// ─── RAPPEL DE SAUVEGARDE ───
+function checkBackupReminder(){
+  const el=document.getElementById('backupBanner');
+  if(!el) return;
+  if(games.length<5){ el.style.display='none'; return; }
+  let last=null, snooze=null;
+  try{ last=localStorage.getItem('gamelog_lastExport'); snooze=localStorage.getItem('gamelog_exportSnooze'); }catch{}
+  const now=Date.now(), THIRTY=30*86400000, SEVEN=7*86400000;
+  const due=!last||now-parseInt(last)>THIRTY;
+  const snoozed=snooze&&now-parseInt(snooze)<SEVEN;
+  if(due&&!snoozed){
+    const msg=last?`Ta dernière exportation date d'il y a ${Math.round((now-parseInt(last))/86400000)} jours.`:`Tu n'as jamais exporté ta bibliothèque (${games.length} jeux).`;
+    el.innerHTML=`<span style="flex:1">💾 ${msg} Tes données ne vivent que dans ce navigateur.</span>
+      <button class="bb-export" onclick="exportData()">Exporter</button>
+      <button class="bb-later" onclick="snoozeBackup()">Plus tard</button>`;
+    el.style.display='flex';
+  } else el.style.display='none';
+}
+function snoozeBackup(){
+  try{ localStorage.setItem('gamelog_exportSnooze',String(Date.now())); }catch{}
+  document.getElementById('backupBanner').style.display='none';
+}
+
 // ─── INIT ───
 renderCurrent();
+checkBackupReminder();
 </script>
 </body>
 </html>
