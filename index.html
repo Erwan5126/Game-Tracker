@@ -94,6 +94,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .hours-badge{font-size:10px;color:var(--text3);font-weight:500}
 .detail-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
 .detail-badge.ownership{background:#EFF6FF;color:#1E40AF}
+.detail-badge.dlc{background:#FCE7F3;color:#BE185D}
 .detail-badge.completion{background:#F3E8FF;color:#7C3AED}
 .detail-badge.format{background:#FEF3C7;color:#92400E}
 .detail-badge.priority-high{background:#FEE2E2;color:#DC2626}
@@ -513,6 +514,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <input type="text" id="mGenre" list="genreList" placeholder="RPG, FPS...">
       <datalist id="genreList"></datalist>
     </div>
+    <div class="field">
+      <label>DLC / Extension de</label>
+      <select id="mParent">
+        <option value="">— Jeu de base (pas un DLC) —</option>
+      </select>
+      <div class="field-hint">Si c'est un DLC, choisis le jeu de base</div>
+    </div>
     </div>
 
     <!-- TAB: TRACKING -->
@@ -783,11 +791,11 @@ function hierarchyHTML(list){
         </div>
         <div class="cards-grid">${consoles[c].sort((a,b)=>{
           if(sortMode==='completed'){
-            const da=lastSession(a)?.end||'9999';
-            const db=lastSession(b)?.end||'9999';
-            return da.localeCompare(db);
+            const da=lastSession(a)?.end||'0000';
+            const db=lastSession(b)?.end||'0000';
+            return db.localeCompare(da);
           }
-          return (a.release||'9999').localeCompare(b.release||'9999');
+          return (b.release||'0000').localeCompare(a.release||'0000');
         }).map(g=>gameCardHTML(g)).join('')}</div>
       </div>`).join('')}
     </div>`;
@@ -838,6 +846,7 @@ function gameCardHTML(g){
     </div>
     <div class="game-card-bottom">
       <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+      ${g.parentId?`<span class="detail-badge dlc">DLC</span>`:''}
       ${g.completion?`<span class="detail-badge completion">${COMPLETION_LABELS[g.completion]||g.completion}</span>`:''}
       ${g.ownership?`<span class="detail-badge ownership">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
       ${g.hours?`<span class="hours-badge">🕒 ${g.hours}h</span>`:''}
@@ -877,6 +886,16 @@ function openPanel(id){
     const label=sessions.length>1?`Période ${i+1}`:'Période';
     const val=`${fmt(s.start)||'?'} → ${s.end?fmt(s.end):'en cours'}`;
     chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">${label}</div><div class="panel-chip-val">${val}</div></div>`;
+  });
+  // DLC: link to parent game
+  if(g.parentId){
+    const parent=games.find(x=>x.id===g.parentId);
+    if(parent) chipsHTML+=`<div class="panel-chip" style="cursor:pointer;border-color:#F9A8D4" onclick="openPanel('${parent.id}')"><div class="panel-chip-lbl">DLC de</div><div class="panel-chip-val">🎮 ${esc(parent.title)}</div></div>`;
+  }
+  // Base game: list its DLCs
+  const dlcs=games.filter(x=>x.parentId===g.id);
+  dlcs.forEach(d=>{
+    chipsHTML+=`<div class="panel-chip" style="cursor:pointer;border-color:#F9A8D4" onclick="openPanel('${d.id}')"><div class="panel-chip-lbl">DLC</div><div class="panel-chip-val">＋ ${esc(d.title)}</div></div>`;
   });
   document.getElementById('pChips').innerHTML=chipsHTML;
   document.getElementById('pNote').value=g.note||'';
@@ -949,6 +968,11 @@ function populateSuggestions(){
   document.getElementById('genreList').innerHTML=genres.map(g=>`<option value="${esc(g)}">`).join('');
   const studios=[...new Set(games.map(g=>g.studio).filter(Boolean))].sort();
   document.getElementById('studioList').innerHTML=studios.map(s=>`<option value="${esc(s)}">`).join('');
+  // Parent select: all non-DLC games except self
+  const editId=document.getElementById('modalOverlay').dataset.editId;
+  const baseGames=games.filter(g=>!g.parentId&&g.id!==editId).sort((a,b)=>a.title.localeCompare(b.title));
+  document.getElementById('mParent').innerHTML='<option value="">— Jeu de base (pas un DLC) —</option>'+
+    baseGames.map(g=>`<option value="${g.id}">${esc(g.title)}</option>`).join('');
 }
 function onModalStatusChange(){
   const s=document.getElementById('mStatus').value;
@@ -1030,6 +1054,9 @@ function openModal(id, tab){
   setModalRating(modalRating);
   previewCover();
   populateSuggestions();
+  // Set parent value after select is populated
+  if(id){ const g=games.find(x=>x.id===id); document.getElementById('mParent').value=(g&&g.parentId)||''; }
+  else { document.getElementById('mParent').value=''; }
   onModalStatusChange();
   switchModalTab(tab||'game');
   closePanel();
@@ -1065,6 +1092,7 @@ function saveGame(){
     format:document.getElementById('mFormat').value,
     completion:document.getElementById('mCompletion').value,
     priority:document.getElementById('mPriority').value,
+    parentId:document.getElementById('mParent').value||'',
     sessions,
     hours:parseFloat(document.getElementById('mHours').value)||0,
     rating:modalRating,
