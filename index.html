@@ -473,7 +473,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       </div>
       <div class="field">
         <label>Console</label>
-        <select id="mConsole"></select>
+        <input type="text" id="mConsole" list="consoleList" placeholder="Ex: PS5, Switch 2...">
+        <datalist id="consoleList"></datalist>
       </div>
     </div>
     <div class="fields-2">
@@ -487,13 +488,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       </div>
       <div class="field">
         <label>Genre</label>
-        <input type="text" id="mGenre" placeholder="RPG, FPS...">
+        <input type="text" id="mGenre" list="genreList" placeholder="RPG, FPS...">
+        <datalist id="genreList"></datalist>
       </div>
     </div>
     <div class="fields-2">
       <div class="field">
         <label>Studio / Éditeur</label>
-        <input type="text" id="mStudio" placeholder="Optionnel">
+        <input type="text" id="mStudio" list="studioList" placeholder="Optionnel">
+        <datalist id="studioList"></datalist>
       </div>
       <div class="field">
         <label>Date de sortie</label>
@@ -841,8 +844,18 @@ function populateMakers(){
 }
 function populateConsoles(selectedConsole){
   const mk=document.getElementById('mMaker').value;
-  const consoles=MAKERS[mk].consoles;
-  document.getElementById('mConsole').innerHTML = consoles.map(c=>`<option value="${esc(c)}"${c===selectedConsole?' selected':''}>${esc(c)}</option>`).join('');
+  const knownConsoles=MAKERS[mk]?.consoles||[];
+  // Also include any custom consoles already used for this maker
+  const usedConsoles=[...new Set(games.filter(g=>g.maker===mk).map(g=>g.console).filter(Boolean))];
+  const all=[...new Set([...knownConsoles,...usedConsoles])];
+  document.getElementById('consoleList').innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');
+  document.getElementById('mConsole').value=selectedConsole||all[0]||'';
+}
+function populateSuggestions(){
+  const genres=[...new Set(games.flatMap(g=>g.genre?g.genre.split(',').map(s=>s.trim()).filter(Boolean):[]))].sort();
+  document.getElementById('genreList').innerHTML=genres.map(g=>`<option value="${esc(g)}">`).join('');
+  const studios=[...new Set(games.map(g=>g.studio).filter(Boolean))].sort();
+  document.getElementById('studioList').innerHTML=studios.map(s=>`<option value="${esc(s)}">`).join('');
 }
 function onModalStatusChange(){
   const s=document.getElementById('mStatus').value;
@@ -909,6 +922,7 @@ function openModal(id){
   }
   setModalRating(modalRating);
   previewCover();
+  populateSuggestions();
   onModalStatusChange();
   closePanel();
   document.getElementById('modalOverlay').classList.add('on');
