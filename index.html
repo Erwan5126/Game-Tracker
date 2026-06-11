@@ -92,6 +92,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .status-badge.doing{background:var(--doing-bg);color:var(--doing-text)}
 .status-badge.todo{background:var(--todo-bg);color:var(--todo-text)}
 .hours-badge{font-size:10px;color:var(--text3);font-weight:500}
+.detail-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.detail-badge.ownership{background:#EFF6FF;color:#1E40AF}
+.detail-badge.completion{background:#F3E8FF;color:#7C3AED}
+.detail-badge.format{background:#FEF3C7;color:#92400E}
+.detail-badge.priority-high{background:#FEE2E2;color:#DC2626}
+.detail-badge.priority-medium{background:#FEF3C7;color:#D97706}
+.detail-badge.priority-low{background:#F3F4F6;color:#6B7280}
 .stars-mini{display:flex;gap:1px;margin-left:auto}
 .star-mini{font-size:10px;color:#E5E4E0}
 .star-mini.on{color:var(--accent)}
@@ -263,7 +270,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
 .modal-overlay.on{display:flex}
 .modal{background:var(--bg2);border-radius:14px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-md)}
-.modal-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:20px}
+.modal-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:14px}
+.modal-tabs{display:flex;gap:4px;background:var(--bg3);border-radius:9px;padding:3px;margin-bottom:18px}
+.modal-tab{flex:1;padding:7px 10px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text3);cursor:pointer;transition:all .12s}
+.modal-tab.on{background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
@@ -378,6 +388,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
           <button class="filter-chip" data-status="doing" onclick="setStatusFilter('doing',this)">En cours</button>
           <button class="filter-chip" data-status="done" onclick="setStatusFilter('done',this)">Terminés</button>
           <button class="filter-chip" data-status="todo" onclick="setStatusFilter('todo',this)">Backlog</button>
+          <div class="filter-sep"></div>
+          <button class="filter-chip on" data-sort="release" onclick="setSortMode('release',this)">↕ Sortie</button>
+          <button class="filter-chip" data-sort="completed" onclick="setSortMode('completed',this)">↕ Complétion</button>
         </div>
         <div id="libraryContent"></div>
       </div>
@@ -454,6 +467,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event,'modalOverlay')">
   <div class="modal">
     <div class="modal-title" id="modalTitle">Ajouter un jeu</div>
+    <div class="modal-tabs">
+      <button type="button" class="modal-tab on" id="tabBtnGame" onclick="switchModalTab('game')">🎮 Infos du jeu</button>
+      <button type="button" class="modal-tab" id="tabBtnTracking" onclick="switchModalTab('tracking')">📊 Mon suivi</button>
+    </div>
+
+    <!-- TAB: GAME INFO -->
+    <div id="modalTabGame">
     <div class="field">
       <label>Titre *</label>
       <input type="text" id="mTitle" placeholder="Nom du jeu...">
@@ -479,21 +499,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     </div>
     <div class="fields-2">
       <div class="field">
-        <label>Statut</label>
-        <select id="mStatus" onchange="onModalStatusChange()">
-          <option value="todo">Backlog</option>
-          <option value="doing">En cours</option>
-          <option value="done">Terminé</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Genre</label>
-        <input type="text" id="mGenre" list="genreList" placeholder="RPG, FPS...">
-        <datalist id="genreList"></datalist>
-      </div>
-    </div>
-    <div class="fields-2">
-      <div class="field">
         <label>Studio / Éditeur</label>
         <input type="text" id="mStudio" list="studioList" placeholder="Optionnel">
         <datalist id="studioList"></datalist>
@@ -502,6 +507,68 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <label>Date de sortie</label>
         <input type="date" id="mRelease">
       </div>
+    </div>
+    <div class="field">
+      <label>Genre</label>
+      <input type="text" id="mGenre" list="genreList" placeholder="RPG, FPS...">
+      <datalist id="genreList"></datalist>
+    </div>
+    </div>
+
+    <!-- TAB: TRACKING -->
+    <div id="modalTabTracking" style="display:none">
+    <div class="fields-2">
+      <div class="field">
+        <label>Statut</label>
+        <select id="mStatus" onchange="onModalStatusChange()">
+          <option value="todo">Backlog</option>
+          <option value="doing">En cours</option>
+          <option value="done">Terminé</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Priorité backlog</label>
+        <select id="mPriority">
+          <option value="">Non précisé</option>
+          <option value="high">Haute</option>
+          <option value="medium">Moyenne</option>
+          <option value="low">Basse</option>
+        </select>
+      </div>
+    </div>
+    <div class="fields-2">
+      <div class="field">
+        <label>Possession</label>
+        <select id="mOwnership">
+          <option value="">Non précisé</option>
+          <option value="owned">Possédé</option>
+          <option value="wishlist">Wishlist</option>
+          <option value="gamepass">Game Pass / Abo</option>
+          <option value="borrowed">Emprunté</option>
+          <option value="played">Joué (plus possédé)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Format</label>
+        <select id="mFormat">
+          <option value="">Non précisé</option>
+          <option value="digital">Dématérialisé</option>
+          <option value="physical">Physique</option>
+          <option value="both">Les deux</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Complétion</label>
+      <select id="mCompletion">
+        <option value="">Non précisé</option>
+        <option value="not_started">Pas commencé</option>
+        <option value="main">Histoire principale</option>
+        <option value="main_extras">Principal + extras</option>
+        <option value="completionist">Complétionniste</option>
+        <option value="hundred">100%</option>
+        <option value="abandoned">Abandonné</option>
+      </select>
     </div>
     <div class="field" id="mSessionsField">
       <label>Périodes de jeu</label>
@@ -523,6 +590,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <span class="mstar" id="ms5" onclick="setModalRating(5)">★</span>
       </div>
     </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">Annuler</button>
       <button class="btn-primary" onclick="saveGame()">Enregistrer</button>
@@ -541,6 +610,10 @@ const MAKERS = {
 };
 const MAKER_ORDER = ['sony','nintendo','microsoft','other'];
 const STATUS_LABELS = {todo:'Backlog',doing:'En cours',done:'Terminé'};
+const OWNERSHIP_LABELS = {owned:'Possédé',wishlist:'Wishlist',gamepass:'Game Pass',borrowed:'Emprunté',played:'Joué'};
+const COMPLETION_LABELS = {not_started:'Pas commencé',main:'Histoire principale',main_extras:'Principal + extras',completionist:'Complétionniste',hundred:'100%',abandoned:'Abandonné'};
+const FORMAT_LABELS = {digital:'Dématérialisé',physical:'Physique',both:'Physique + Digital'};
+const PRIORITY_LABELS = {high:'Haute',medium:'Moyenne',low:'Basse'};
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── STATE ───
@@ -584,7 +657,7 @@ let games = (() => {
     return [];
   }catch{ return []; }
 })();
-let currentView='library', makerFilter='all', statusFilter='all', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
+let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
 
 function save(){ localStorage.setItem(LS,JSON.stringify(games)); }
 function today(){ return new Date().toISOString().split('T')[0]; }
@@ -670,6 +743,12 @@ function setStatusFilter(s,btn){
   btn.classList.add('on');
   renderLibrary();
 }
+function setSortMode(m,btn){
+  sortMode=m;
+  document.querySelectorAll('[data-sort]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderCurrent();
+}
 
 // ─── HIERARCHICAL RENDER (maker -> console -> cards) ───
 function hierarchyHTML(list){
@@ -702,7 +781,14 @@ function hierarchyHTML(list){
           <div class="console-name" style="color:${M.color}">${esc(c)}</div>
           <div class="console-count">· ${consoles[c].length}</div>
         </div>
-        <div class="cards-grid">${consoles[c].map(g=>gameCardHTML(g)).join('')}</div>
+        <div class="cards-grid">${consoles[c].sort((a,b)=>{
+          if(sortMode==='completed'){
+            const da=lastSession(a)?.end||'9999';
+            const db=lastSession(b)?.end||'9999';
+            return da.localeCompare(db);
+          }
+          return (a.release||'9999').localeCompare(b.release||'9999');
+        }).map(g=>gameCardHTML(g)).join('')}</div>
       </div>`).join('')}
     </div>`;
   });
@@ -752,6 +838,8 @@ function gameCardHTML(g){
     </div>
     <div class="game-card-bottom">
       <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+      ${g.completion?`<span class="detail-badge completion">${COMPLETION_LABELS[g.completion]||g.completion}</span>`:''}
+      ${g.ownership?`<span class="detail-badge ownership">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
       ${g.hours?`<span class="hours-badge">🕒 ${g.hours}h</span>`:''}
       ${stars}
     </div>
@@ -777,9 +865,13 @@ function openPanel(id){
   } else { coverEl.style.display='none'; }
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
   document.getElementById('pHoursNum').textContent=g.hours||'—';
-  // Chips: sessions
+  // Chips
   const sessions=getSessions(g);
   let chipsHTML=`<div class="panel-chip"><div class="panel-chip-lbl">Statut</div><div class="panel-chip-val">${STATUS_LABELS[g.status]}</div></div>`;
+  if(g.ownership) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Possession</div><div class="panel-chip-val">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</div></div>`;
+  if(g.completion) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Complétion</div><div class="panel-chip-val">${COMPLETION_LABELS[g.completion]||g.completion}</div></div>`;
+  if(g.format) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Format</div><div class="panel-chip-val">${FORMAT_LABELS[g.format]||g.format}</div></div>`;
+  if(g.priority) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Priorité</div><div class="panel-chip-val">${PRIORITY_LABELS[g.priority]||g.priority}</div></div>`;
   if(g.release) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie</div><div class="panel-chip-val">${fmt(g.release)}</div></div>`;
   sessions.forEach((s,i)=>{
     const label=sessions.length>1?`Période ${i+1}`:'Période';
@@ -793,7 +885,8 @@ function openPanel(id){
     <button class="btn-primary" onclick="setPanelStatus('done')" style="${isDone?'background:#15803D':''}">${isDone?'✓ Terminé':'Marquer terminé'}</button>
     ${isDone?`<button class="btn-doing" onclick="resumeGame('${id}')">🔄 Reprendre</button>`
       :`<button class="btn-doing" onclick="setPanelStatus('doing')" style="${isDoing?'background:#FED7AA':''}">${isDoing?'▶ En cours':'Commencer'}</button>`}
-    <button class="btn-secondary" onclick="openModal('${id}')">Modifier</button>
+    <button class="btn-secondary" onclick="openModal('${id}','game')">✎ Jeu</button>
+    <button class="btn-secondary" onclick="openModal('${id}','tracking')">✎ Suivi</button>
     <button class="btn-danger" onclick="deleteGame('${id}')">Supprimer</button>`;
   document.getElementById('panelOverlay').classList.add('on');
 }
@@ -888,7 +981,13 @@ function getModalSessions(){
   });
   return sessions;
 }
-function openModal(id){
+function switchModalTab(tab){
+  document.getElementById('modalTabGame').style.display=tab==='game'?'':'none';
+  document.getElementById('modalTabTracking').style.display=tab==='tracking'?'':'none';
+  document.getElementById('tabBtnGame').classList.toggle('on',tab==='game');
+  document.getElementById('tabBtnTracking').classList.toggle('on',tab==='tracking');
+}
+function openModal(id, tab){
   modalRating=0;
   populateMakers();
   document.getElementById('mSessions').innerHTML='';
@@ -903,6 +1002,10 @@ function openModal(id){
     document.getElementById('mStudio').value=g.studio||'';
     document.getElementById('mRelease').value=g.release||'';
     document.getElementById('mGenre').value=g.genre||'';
+    document.getElementById('mOwnership').value=g.ownership||'';
+    document.getElementById('mFormat').value=g.format||'';
+    document.getElementById('mCompletion').value=g.completion||'';
+    document.getElementById('mPriority').value=g.priority||'';
     document.getElementById('mHours').value=g.hours||'';
     getSessions(g).forEach(s=>addSessionRow(s.start,s.end));
     modalRating=g.rating||0;
@@ -917,6 +1020,10 @@ function openModal(id){
     document.getElementById('mStudio').value='';
     document.getElementById('mRelease').value='';
     document.getElementById('mGenre').value='';
+    document.getElementById('mOwnership').value='';
+    document.getElementById('mFormat').value='';
+    document.getElementById('mCompletion').value='';
+    document.getElementById('mPriority').value='';
     document.getElementById('mHours').value='';
     delete document.getElementById('modalOverlay').dataset.editId;
   }
@@ -924,9 +1031,10 @@ function openModal(id){
   previewCover();
   populateSuggestions();
   onModalStatusChange();
+  switchModalTab(tab||'game');
   closePanel();
   document.getElementById('modalOverlay').classList.add('on');
-  setTimeout(()=>document.getElementById('mTitle').focus(),80);
+  if((tab||'game')==='game') setTimeout(()=>document.getElementById('mTitle').focus(),80);
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('on'); }
 function setModalRating(r){
@@ -953,6 +1061,10 @@ function saveGame(){
     studio:document.getElementById('mStudio').value.trim(),
     release:document.getElementById('mRelease').value,
     genre:document.getElementById('mGenre').value.trim(),
+    ownership:document.getElementById('mOwnership').value,
+    format:document.getElementById('mFormat').value,
+    completion:document.getElementById('mCompletion').value,
+    priority:document.getElementById('mPriority').value,
     sessions,
     hours:parseFloat(document.getElementById('mHours').value)||0,
     rating:modalRating,
