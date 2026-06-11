@@ -179,15 +179,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .bar-seg:hover{opacity:1}
 .bar-seg.striped{background-image:repeating-linear-gradient(-45deg,transparent,transparent 2px,rgba(255,255,255,.3) 2px,rgba(255,255,255,.3) 4px)}
 .month-bar-legend{margin-top:6px;display:flex;flex-direction:column;gap:2px}
-.month-bar-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:1px 0}
+.month-bar-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:1px 0;min-width:0}
 .month-bar-legend-item:hover .month-bar-legend-name{color:var(--text)}
 .month-bar-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.month-bar-legend-name{font-size:8px;font-weight:600;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .1s}
+.month-bar-legend-name{min-width:0;flex:1;font-size:8px;font-weight:600;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .1s}
 
 /* ── CALENDAR ── */
 .cal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .cal-title{font-size:16px;font-weight:700;letter-spacing:-.4px}
-.cal-year-btns{display:flex;gap:6px;margin-left:auto}
+.cal-year-btns{display:flex;gap:6px;margin-left:auto;overflow-x:auto;max-width:100%;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cal-year-btns::-webkit-scrollbar{display:none}
+.cal-year-btn{flex-shrink:0}
 .cal-year-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer}
 .cal-year-btn.on{background:var(--text);color:#fff;border-color:var(--text)}
 .cal-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
@@ -197,7 +199,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .month-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(min-width:560px){.month-grid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:800px){.month-grid{grid-template-columns:repeat(4,1fr)}}
-.month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-width:0;overflow:hidden}
 .month-card.cur{border-color:var(--border2)}
 .month-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .month-name{font-size:12px;font-weight:700}
@@ -367,6 +369,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 @media(max-width:640px){
   .sidebar{display:none}
+  .month-grid{grid-template-columns:1fr}
+  .mday{font-size:11px}
+  .mday-lbl{font-size:10px}
+  .month-bar-legend-name{font-size:10px}
+  .cal-header{flex-direction:column;align-items:stretch}
+  .cal-year-btns{margin-left:0}
   .mobile-nav{display:flex}
   .theme-toggle-mobile{display:flex}
   .main-header{padding:14px 16px 12px}
