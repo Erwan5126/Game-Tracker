@@ -439,7 +439,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div class="main-title" id="mainTitle">Tous les jeux</div>
       <div class="search-wrap" id="searchWrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderCurrent()">
+        <input type="text" id="searchInput" placeholder="Titre, genre, studio, année..." oninput="renderCurrent()">
       </div>
       <button class="theme-toggle-mobile" id="themeToggleMobile" onclick="toggleTheme()">🌙</button>
       <button class="add-btn" style="width:auto;padding:7px 14px;font-size:12px" onclick="openModal(null)">＋</button>
@@ -927,14 +927,25 @@ function hierarchyHTML(list){
   return html;
 }
 
+// Search match: title, studio, console, genre, release year
+function matchesSearch(g, q){
+  if(!q) return true;
+  if(g.title.toLowerCase().includes(q)) return true;
+  if((g.studio||'').toLowerCase().includes(q)) return true;
+  if((g.console||'').toLowerCase().includes(q)) return true;
+  if((g.releaseConsole||'').toLowerCase().includes(q)) return true;
+  if((g.genre||'').toLowerCase().includes(q)) return true;
+  if(g.release&&g.release.slice(0,4)===q) return true; // exact year "2023"
+  return false;
+}
+
 function renderLibrary(){
   buildMakerFilters();
   const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   const filtered=games.filter(g=>{
     if(makerFilter!=='all'&&makerOfConsole(g.console)!==makerFilter) return false;
     if(statusFilter!=='all'&&g.status!==statusFilter) return false;
-    if(q&&!g.title.toLowerCase().includes(q)&&!(g.studio||'').toLowerCase().includes(q)&&!(g.console||'').toLowerCase().includes(q)) return false;
-    return true;
+    return matchesSearch(g, q);
   });
   document.getElementById('libraryContent').innerHTML = filtered.length?hierarchyHTML(filtered):emptyHTML('Aucun jeu trouvé','Modifie tes filtres ou ajoute un nouveau jeu.');
 }
@@ -943,8 +954,7 @@ function renderStatusView(viewId,status){
   const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   const filtered=games.filter(g=>{
     if(g.status!==status) return false;
-    if(q&&!g.title.toLowerCase().includes(q)) return false;
-    return true;
+    return matchesSearch(g, q);
   });
   const msgs={todo:'Ton backlog est vide.',doing:'Aucun jeu en cours.',done:'Aucun jeu terminé pour le moment.'};
   if(!filtered.length){
