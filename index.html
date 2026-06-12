@@ -98,6 +98,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .status-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
 .status-badge.done{background:var(--done-bg);color:var(--done-text)}
 .status-badge.doing{background:var(--doing-bg);color:var(--doing-text)}
+.status-badge.paused{background:#E0E7FF;color:#4338CA}
+[data-theme="dark"] .status-badge.paused{background:#2a2a4a;color:#A5B4FC}
 .status-badge.todo{background:var(--todo-bg);color:var(--todo-text)}
 .hours-badge{font-size:10px;color:var(--text3);font-weight:500}
 .detail-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
@@ -450,6 +452,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <span class="nav-icon">▶</span> En cours
         <span class="nav-badge" id="badge-doing">0</span>
       </button>
+      <button class="nav-item" data-view="paused" onclick="switchView('paused',this)">
+        <span class="nav-icon">⏸</span> En pause
+        <span class="nav-badge" id="badge-paused">0</span>
+      </button>
       <button class="nav-item" data-view="done" onclick="switchView('done',this)">
         <span class="nav-icon">✓</span> Terminés
         <span class="nav-badge" id="badge-done">0</span>
@@ -496,6 +502,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
           <div class="filter-sep"></div>
           <button class="filter-chip on" data-status="all" onclick="setStatusFilter('all',this)">Tous statuts</button>
           <button class="filter-chip" data-status="doing" onclick="setStatusFilter('doing',this)">En cours</button>
+          <button class="filter-chip" data-status="paused" onclick="setStatusFilter('paused',this)">En pause</button>
           <button class="filter-chip" data-status="done" onclick="setStatusFilter('done',this)">Terminés</button>
           <button class="filter-chip" data-status="todo" onclick="setStatusFilter('todo',this)">Backlog</button>
           <div class="filter-sep"></div>
@@ -506,6 +513,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       </div>
       <div class="view" id="view-backlog"><div id="backlogContent"></div></div>
       <div class="view" id="view-doing"><div id="doingContent"></div></div>
+      <div class="view" id="view-paused"><div id="pausedContent"></div></div>
       <div class="view" id="view-done"><div id="doneContent"></div></div>
       <div class="view" id="view-calendar"><div id="calContent"></div></div>
       <div class="view" id="view-releases"><div id="releasesContent"></div></div>
@@ -625,6 +633,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <datalist id="genreList"></datalist>
     </div>
     <div class="field">
+      <label>Franchise / Saga</label>
+      <input type="text" id="mFranchise" list="franchiseList" placeholder="Ex: Zelda, Pokémon, Fire Emblem...">
+      <datalist id="franchiseList"></datalist>
+      <div class="field-hint">Pour regrouper les jeux d'une même série</div>
+    </div>
+    <div class="field">
       <label>DLC / Extension de</label>
       <select id="mParent">
         <option value="">— Jeu de base (pas un DLC) —</option>
@@ -647,6 +661,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <select id="mStatus" onchange="onModalStatusChange()">
           <option value="todo">Backlog</option>
           <option value="doing">En cours</option>
+          <option value="paused">En pause</option>
           <option value="done">Terminé</option>
         </select>
       </div>
@@ -688,9 +703,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <option value="">Non précisé</option>
         <option value="not_started">Pas commencé</option>
         <option value="main">Histoire principale</option>
-        <option value="main_extras">Principal + extras</option>
-        <option value="completionist">Complétionniste</option>
+        <option value="main_extras">Principal + annexes</option>
         <option value="hundred">100%</option>
+        <option value="platinum">🏆 Platiné / Tous succès</option>
         <option value="abandoned">Abandonné</option>
       </select>
     </div>
@@ -742,9 +757,9 @@ const MAKERS = {
   other:     {label:'Tiers / Indé', color:'#6B7280', consoles:['Steam','Epic Games','GOG','Battle.net','PC (autre)','Dreamcast','Saturn','Mega Drive','Game Gear','iOS','Android','PS5','PS4','Switch 2','Switch','Xbox Series X|S','Xbox One','Autre']},
 };
 const MAKER_ORDER = ['sony','nintendo','microsoft','other'];
-const STATUS_LABELS = {todo:'Backlog',doing:'En cours',done:'Terminé'};
+const STATUS_LABELS = {todo:'Backlog',doing:'En cours',paused:'En pause',done:'Terminé'};
 const OWNERSHIP_LABELS = {owned:'Possédé',wishlist:'Wishlist',gamepass:'Game Pass',borrowed:'Emprunté',played:'Joué'};
-const COMPLETION_LABELS = {not_started:'Pas commencé',main:'Histoire principale',main_extras:'Principal + extras',completionist:'Complétionniste',hundred:'100%',abandoned:'Abandonné'};
+const COMPLETION_LABELS = {not_started:'Pas commencé',main:'Histoire principale',main_extras:'Principal + annexes',hundred:'100%',platinum:'🏆 Platiné / Tous succès',abandoned:'Abandonné'};
 const FORMAT_LABELS = {digital:'Dématérialisé',physical:'Physique',both:'Physique + Digital'};
 const PRIORITY_LABELS = {high:'Haute',medium:'Moyenne',low:'Basse'};
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -756,7 +771,7 @@ let games = (() => {
     let g = JSON.parse(localStorage.getItem(LS));
     if(g){
       // Migrate removed makers to 'other'
-      g.forEach(x=>{ if(x.maker==='pc'||x.maker==='sega'||x.maker==='mobile') x.maker='other'; });
+      g.forEach(x=>{ if(x.maker==='pc'||x.maker==='sega'||x.maker==='mobile') x.maker='other'; if(x.completion==='completionist') x.completion='hundred'; });
       return g;
     }
     // Migrate from v2
@@ -844,7 +859,7 @@ function showToast(msg, actionHTML, duration){
 function hideToast(){ document.getElementById('toast').classList.remove('on'); }
 
 // ─── VIEWS ───
-const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',done:'Terminés',releases:'Prochaines sorties',calendar:'Calendrier',stats:'Statistiques'};
+const VIEW_TITLES = {library:'Tous les jeux',backlog:'Backlog',doing:'En cours',paused:'En pause',done:'Terminés',releases:'Prochaines sorties',calendar:'Calendrier',stats:'Statistiques'};
 function switchView(v,btn){
   currentView=v;
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
@@ -852,13 +867,14 @@ function switchView(v,btn){
   document.querySelectorAll('[data-view]').forEach(el=>el.classList.remove('on'));
   document.querySelectorAll('[data-view="'+v+'"]').forEach(el=>el.classList.add('on'));
   document.getElementById('mainTitle').textContent=VIEW_TITLES[v]||v;
-  document.getElementById('searchWrap').style.display=['library','backlog','doing','done'].includes(v)?'':'none';
+  document.getElementById('searchWrap').style.display=['library','backlog','doing','paused','done'].includes(v)?'':'none';
   renderCurrent();
 }
 function renderCurrent(){
   if(currentView==='library') renderLibrary();
   else if(currentView==='backlog') renderStatusView('backlog','todo');
   else if(currentView==='doing') renderStatusView('doing','doing');
+  else if(currentView==='paused') renderStatusView('paused','paused');
   else if(currentView==='done') renderStatusView('done','done');
   else if(currentView==='releases') renderReleases();
   else if(currentView==='calendar') renderCalendar();
@@ -869,6 +885,7 @@ function updateBadges(){
   document.getElementById('badge-library').textContent=games.length;
   document.getElementById('badge-backlog').textContent=games.filter(g=>g.status==='todo').length;
   document.getElementById('badge-doing').textContent=games.filter(g=>g.status==='doing').length;
+  document.getElementById('badge-paused').textContent=games.filter(g=>g.status==='paused').length;
   document.getElementById('badge-done').textContent=games.filter(g=>g.status==='done').length;
   const todayStr=today();
   document.getElementById('badge-releases').textContent=games.filter(g=>g.release&&g.release>=todayStr).length;
@@ -1005,6 +1022,7 @@ function matchesSearch(g, q){
   if((g.console||'').toLowerCase().includes(q)) return true;
   if((g.releaseConsole||'').toLowerCase().includes(q)) return true;
   if((g.genre||'').toLowerCase().includes(q)) return true;
+  if((g.franchise||'').toLowerCase().includes(q)) return true;
   if(g.release&&g.release.slice(0,4)===q) return true; // exact year "2023"
   return false;
 }
@@ -1026,7 +1044,7 @@ function renderStatusView(viewId,status){
     if(g.status!==status) return false;
     return matchesSearch(g, q);
   });
-  const msgs={todo:'Ton backlog est vide.',doing:'Aucun jeu en cours.',done:'Aucun jeu terminé pour le moment.'};
+  const msgs={todo:'Ton backlog est vide.',doing:'Aucun jeu en cours.',paused:'Aucun jeu en pause.',done:'Aucun jeu terminé pour le moment.'};
   if(!filtered.length){
     document.getElementById(viewId+'Content').innerHTML = emptyHTML('',msgs[status]);
     return;
@@ -1134,6 +1152,12 @@ function openPanel(id){
     const val=`${fmt(s.start)||'?'} → ${s.end?fmt(s.end):'en cours'}`;
     chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">${label}</div><div class="panel-chip-val">${val}</div></div>`;
   });
+  // Franchise chip with progression
+  if(g.franchise){
+    const fGames=games.filter(x=>x.franchise===g.franchise&&!x.parentId);
+    const fDone=fGames.filter(x=>x.status==='done').length;
+    chipsHTML+=`<div class="panel-chip" style="cursor:pointer;border-color:var(--accent)" onclick="closePanel();switchView('library',document.querySelector('[data-view=library]'));document.getElementById('searchInput').value='${esc(g.franchise).replace(/'/g,"\\'")}';updateSearchClear();renderCurrent()"><div class="panel-chip-lbl">Franchise</div><div class="panel-chip-val">📚 ${esc(g.franchise)} · ${fDone}/${fGames.length} terminé${fDone>1?'s':''}</div></div>`;
+  }
   // DLC: link to parent game
   if(g.parentId){
     const parent=games.find(x=>x.id===g.parentId);
@@ -1147,10 +1171,12 @@ function openPanel(id){
   document.getElementById('pChips').innerHTML=chipsHTML;
   document.getElementById('pNote').value=g.note||'';
   const isDone=g.status==='done',isDoing=g.status==='doing';
+  const isPaused=g.status==='paused';
   document.getElementById('pActions').innerHTML=`
     <button class="btn-primary" onclick="setPanelStatus('done')" style="${isDone?'background:#15803D':''}">${isDone?'✓ Terminé':'Marquer terminé'}</button>
-    ${isDone?`<button class="btn-doing" onclick="resumeGame('${id}')">🔄 Reprendre</button>`
+    ${isDone||isPaused?`<button class="btn-doing" onclick="resumeGame('${id}')">🔄 Reprendre</button>`
       :`<button class="btn-doing" onclick="setPanelStatus('doing')" style="${isDoing?'background:#FED7AA':''}">${isDoing?'▶ En cours':'Commencer'}</button>`}
+    ${isDoing?`<button class="btn-secondary" onclick="setPanelStatus('paused')">⏸ Pause</button>`:''}
     <button class="btn-secondary" onclick="openModal('${id}','game')">✎ Jeu</button>
     <button class="btn-secondary" onclick="openModal('${id}','tracking')">✎ Suivi</button>
     <button class="btn-danger" onclick="deleteGame('${id}')">Supprimer</button>`;
@@ -1165,6 +1191,11 @@ function setPanelStatus(s){
   if(s==='doing'){
     // If no open session, start one
     if(!hasOpenSession(g)) g.sessions.push({start:today(),end:''});
+  }
+  if(s==='paused'){
+    // Close the open session — playing stopped for now
+    const ls=lastSession(g);
+    if(ls&&!ls.end) ls.end=today();
   }
   if(s==='done'){
     // Close the last open session
@@ -1229,6 +1260,8 @@ function populateSuggestions(){
   document.getElementById('genreList').innerHTML=genres.map(g=>`<option value="${esc(g)}">`).join('');
   const studios=[...new Set(games.map(g=>g.studio).filter(Boolean))].sort();
   document.getElementById('studioList').innerHTML=studios.map(s=>`<option value="${esc(s)}">`).join('');
+  const franchises=[...new Set(games.map(g=>g.franchise).filter(Boolean))].sort();
+  document.getElementById('franchiseList').innerHTML=franchises.map(f=>`<option value="${esc(f)}">`).join('');
   // Parent select: all non-DLC games except self
   const editId=document.getElementById('modalOverlay').dataset.editId;
   const baseGames=games.filter(g=>!g.parentId&&g.id!==editId).sort((a,b)=>a.title.localeCompare(b.title));
@@ -1290,6 +1323,7 @@ function openModal(id, tab){
     document.getElementById('mStudio').value=g.studio||'';
     document.getElementById('mRelease').value=g.release||'';
     document.getElementById('mGenre').value=g.genre||'';
+    document.getElementById('mFranchise').value=g.franchise||'';
     document.getElementById('mOwnership').value=g.ownership||'';
     document.getElementById('mFormat').value=g.format||'';
     document.getElementById('mCompletion').value=g.completion||'';
@@ -1310,6 +1344,7 @@ function openModal(id, tab){
     document.getElementById('mStudio').value='';
     document.getElementById('mRelease').value='';
     document.getElementById('mGenre').value='';
+    document.getElementById('mFranchise').value='';
     document.getElementById('mOwnership').value='';
     document.getElementById('mFormat').value='';
     document.getElementById('mCompletion').value='';
@@ -1356,6 +1391,7 @@ function saveGame(){
     studio:document.getElementById('mStudio').value.trim(),
     release:document.getElementById('mRelease').value,
     genre:document.getElementById('mGenre').value.trim(),
+    franchise:document.getElementById('mFranchise').value.trim(),
     ownership:document.getElementById('mOwnership').value,
     format:document.getElementById('mFormat').value,
     completion:document.getElementById('mCompletion').value,
@@ -2011,6 +2047,20 @@ function renderStats(){
     const ls=lastSession(g); const dateStr=ls&&ls.end?fmt(ls.end):'';
     return topGameHTML(g,i+1,`<div style="font-size:11px;color:var(--text3);flex-shrink:0">${dateStr}</div>`);
   }).join('')}</div>`:''}
+
+  ${(()=>{
+    // Franchises progression
+    const frMap={};
+    fg.forEach(g=>{ if(g.franchise&&!g.parentId){ if(!frMap[g.franchise]) frMap[g.franchise]={total:0,done:0,hours:0}; frMap[g.franchise].total++; if(g.status==='done') frMap[g.franchise].done++; frMap[g.franchise].hours+=hoursOf(g); } });
+    const frSorted=Object.entries(frMap).filter(([,v])=>v.total>1).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+    if(!frSorted.length) return '';
+    return `<div class="section-title">Franchises</div>
+    <div class="genre-bars" style="margin-bottom:28px">${frSorted.map(([name,v])=>`<div class="genre-bar-row">
+      <div class="genre-bar-name" title="${esc(name)}">${esc(name)}</div>
+      <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${v.done/v.total*100}%;background:linear-gradient(90deg,#6A4C93,#E63946)"></div></div>
+      <div class="genre-bar-count" style="width:auto;white-space:nowrap">${v.done}/${v.total}${v.hours?' · '+Math.round(v.hours)+'h':''}</div>
+    </div>`).join('')}</div>`;
+  })()}
 
   ${genresSorted.length?`<div class="section-title">Genres</div>
   <div class="genre-bars">${genresSorted.map(([name,count],i)=>`<div class="genre-bar-row">
