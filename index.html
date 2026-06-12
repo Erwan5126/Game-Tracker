@@ -111,6 +111,37 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .empty-sub{font-size:12px;line-height:1.6}
 .empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
 
+/* ── WRAPPED / RECAP ── */
+.wrap-hero{background:linear-gradient(135deg,#6A4C93 0%,#E63946 55%,#F4A261 100%);border-radius:16px;padding:28px 24px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden}
+.wrap-hero::after{content:'🎮';position:absolute;right:-10px;bottom:-22px;font-size:110px;opacity:.12;transform:rotate(-15deg)}
+.wrap-hero-year{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:.85}
+.wrap-hero-big{font-size:52px;font-weight:800;letter-spacing:-2.5px;line-height:1;margin:6px 0 2px}
+.wrap-hero-sub{font-size:14px;font-weight:500;opacity:.9}
+.wrap-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:700px){.wrap-grid{grid-template-columns:repeat(3,1fr)}}
+.wrap-card{border-radius:14px;padding:18px 16px;color:#fff;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;justify-content:flex-end}
+.wrap-card.clickable{cursor:pointer;transition:transform .15s}
+.wrap-card.clickable:hover{transform:translateY(-2px)}
+.wrap-card-emoji{font-size:24px;margin-bottom:auto}
+.wrap-card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.8;margin-bottom:3px}
+.wrap-card-value{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1.15}
+.wrap-card-sub{font-size:11px;font-weight:500;opacity:.85;margin-top:2px}
+.wrap-card-cover{position:absolute;right:-8px;top:50%;transform:translateY(-50%) rotate(6deg);width:64px;height:86px;border-radius:6px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.wrap-card.c1{background:linear-gradient(135deg,#1D3557,#457B9D)}
+.wrap-card.c2{background:linear-gradient(135deg,#9D0208,#E63946)}
+.wrap-card.c3{background:linear-gradient(135deg,#2A6F4E,#2A9D8F)}
+.wrap-card.c4{background:linear-gradient(135deg,#B45309,#F4A261)}
+.wrap-card.c5{background:linear-gradient(135deg,#4C2A85,#6A4C93)}
+.wrap-card.c6{background:linear-gradient(135deg,#933752,#FF6B9D)}
+.wrap-months{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:24px}
+.wrap-months-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:12px}
+.wrap-months-bars{display:flex;align-items:flex-end;gap:4px;height:80px}
+.wrap-month-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.wrap-month-bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#E63946,#F4A261);min-height:2px;transition:height .5s}
+.wrap-month-bar.empty{background:var(--bg3)}
+.wrap-month-lbl{font-size:8px;font-weight:600;color:var(--text3)}
+.wrap-month-col.best .wrap-month-lbl{color:var(--text);font-weight:800}
+
 /* ── STATS ── */
 .stats-hero{display:flex;gap:20px;align-items:center;margin-bottom:28px;flex-wrap:wrap}
 .stats-donut{position:relative;width:140px;height:140px;flex-shrink:0}
@@ -1693,12 +1724,113 @@ function renderStats(){
     </div>`;
   });
 
+  // ─── WRAPPED DATA ───
+  let wrappedHTML='';
+  {
+    const periodLabel=sy||'Toujours';
+    // Game of the period: most hours
+    const goty=topPlayed[0]||null;
+    // Coup de cœur: best rated completed in period
+    const fav=[...fg].filter(g=>g.rating>=4&&g.status==='done').sort((a,b)=>b.rating-a.rating||hoursOf(b)-hoursOf(a))[0]||null;
+    // Completions in period
+    const doneInPeriod=sy?fg.filter(g=>g.status==='done'&&getSessions(g).some(s=>(s.end||'').startsWith(sy))).length:done;
+    // Dominant genre
+    const topGenre=genresSorted.length?genresSorted[0]:null;
+    // Dominant platform (played-on console)
+    const consoleCounts={};
+    fg.forEach(g=>{ if(g.console) consoleCounts[g.console]=(consoleCounts[g.console]||0)+1; });
+    const topConsole=Object.entries(consoleCounts).sort((a,b)=>b[1]-a[1])[0]||null;
+    // Monthly activity (sessions touching each month)
+    const monthActivity=Array(12).fill(0);
+    if(sy){
+      fg.forEach(g=>getSessions(g).forEach(s=>{
+        const gs=s.start||s.end||'', ge=s.end||(g.status==='doing'&&!s.end?today():s.start)||'';
+        if(!gs) return;
+        for(let m=0;m<12;m++){
+          const ms=`${sy}-${String(m+1).padStart(2,'0')}`;
+          const mEnd=ms+'-31';
+          if(gs<=mEnd&&ge>=ms+'-01') monthActivity[m]++;
+        }
+      }));
+    }
+    const maxMonth=Math.max(1,...monthActivity);
+    const bestMonth=sy&&Math.max(...monthActivity)>0?monthActivity.indexOf(Math.max(...monthActivity)):-1;
+    // Longest game session streak / marathon: game with longest single session
+    let marathon=null, marathonDays=0;
+    fg.forEach(g=>getSessions(g).forEach(s=>{
+      if(s.start&&s.end){
+        const days=Math.round((new Date(s.end)-new Date(s.start))/86400000)+1;
+        if(days>marathonDays){ marathonDays=days; marathon=g; }
+      }
+    }));
+
+    wrappedHTML=`
+    <div class="wrap-hero">
+      <div class="wrap-hero-year">${sy?'Ton année '+sy:'Ton historique complet'}</div>
+      <div class="wrap-hero-big">${statHours>0?statHours+'h':total+' jeux'}</div>
+      <div class="wrap-hero-sub">${statHours>0?`de jeu ${sy?'en '+sy:'au total'} · ${total} jeux · ${doneInPeriod} terminés`:`${doneInPeriod} terminés ${sy?'en '+sy:''}`}</div>
+    </div>
+    <div class="wrap-grid">
+      ${goty?`<div class="wrap-card c1 clickable" onclick="openPanel('${goty.id}')">
+        ${goty.cover?`<img class="wrap-card-cover" src="${esc(goty.cover)}" onerror="this.remove()">`:''}
+        <div class="wrap-card-emoji">🏆</div>
+        <div class="wrap-card-label">Jeu de l'année</div>
+        <div class="wrap-card-value">${esc(goty.title)}</div>
+        <div class="wrap-card-sub">${hoursOf(goty)}h de jeu</div>
+      </div>`:''}
+      ${fav&&fav!==goty?`<div class="wrap-card c2 clickable" onclick="openPanel('${fav.id}')">
+        ${fav.cover?`<img class="wrap-card-cover" src="${esc(fav.cover)}" onerror="this.remove()">`:''}
+        <div class="wrap-card-emoji">❤️</div>
+        <div class="wrap-card-label">Coup de cœur</div>
+        <div class="wrap-card-value">${esc(fav.title)}</div>
+        <div class="wrap-card-sub">${'★'.repeat(fav.rating)}</div>
+      </div>`:''}
+      <div class="wrap-card c3">
+        <div class="wrap-card-emoji">✅</div>
+        <div class="wrap-card-label">Terminés</div>
+        <div class="wrap-card-value">${doneInPeriod} jeu${doneInPeriod>1?'x':''}</div>
+        ${doneInPeriod>0?`<div class="wrap-card-sub">${sy?'cette année':'au total'}</div>`:''}
+      </div>
+      ${topGenre?`<div class="wrap-card c4">
+        <div class="wrap-card-emoji">🏷️</div>
+        <div class="wrap-card-label">Genre favori</div>
+        <div class="wrap-card-value">${esc(topGenre[0])}</div>
+        <div class="wrap-card-sub">${topGenre[1]} jeu${topGenre[1]>1?'x':''}</div>
+      </div>`:''}
+      ${topConsole?`<div class="wrap-card c5">
+        <div class="wrap-card-emoji">🎮</div>
+        <div class="wrap-card-label">Plateforme favorite</div>
+        <div class="wrap-card-value">${esc(topConsole[0])}</div>
+        <div class="wrap-card-sub">${topConsole[1]} jeu${topConsole[1]>1?'x':''}</div>
+      </div>`:''}
+      ${marathon&&marathonDays>13?`<div class="wrap-card c6 clickable" onclick="openPanel('${marathon.id}')">
+        <div class="wrap-card-emoji">🐢</div>
+        <div class="wrap-card-label">Le marathon</div>
+        <div class="wrap-card-value">${esc(marathon.title)}</div>
+        <div class="wrap-card-sub">${marathonDays} jours de jeu</div>
+      </div>`:''}
+    </div>
+    ${sy?`<div class="wrap-months">
+      <div class="wrap-months-title">Activité mois par mois</div>
+      <div class="wrap-months-bars">
+        ${monthActivity.map((c,m)=>`<div class="wrap-month-col ${m===bestMonth?'best':''}">
+          <div class="wrap-month-bar ${c?'':'empty'}" style="height:${Math.max(3,c/maxMonth*100)}%" title="${MONTHS[m]}: ${c} jeu${c>1?'x':''}"></div>
+          <div class="wrap-month-lbl">${MONTHS[m].slice(0,1)}</div>
+        </div>`).join('')}
+      </div>
+      ${bestMonth>=0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">🔥 Ton mois le plus actif : <strong style="color:var(--text)">${MONTHS[bestMonth]}</strong></div>`:''}
+    </div>`:''}
+    `;
+  }
+
   document.getElementById('statsContent').innerHTML=`
   <!-- YEAR SELECTOR -->
   <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
     <button class="filter-chip ${!sy?'on':''}" onclick="setStatsYear(null)">Tout</button>
     ${years.map(y=>`<button class="filter-chip ${sy===y?'on':''}" onclick="setStatsYear('${y}')">${y}</button>`).join('')}
   </div>
+
+  ${wrappedHTML}
 
   <!-- HERO -->
   <div class="stats-hero">
