@@ -893,7 +893,7 @@ function updateBadges(){
 
 // ─── FILTERS ───
 function buildMakerFilters(){
-  const present=[...new Set(games.map(g=>makerOfConsole(g.console)))].filter(Boolean);
+  const present=[...new Set(games.map(g=>groupMakerOf(g)))].filter(Boolean);
   const ordered=MAKER_ORDER.filter(m=>present.includes(m));
   const bar=document.getElementById('libFilters');
   bar.querySelectorAll('[data-maker]:not([data-maker="all"])').forEach(el=>el.remove());
@@ -943,14 +943,26 @@ function makerOfConsole(consoleName){
   if(/xbox/.test(cl)) return 'microsoft';
   return 'other';
 }
+// Grouping maker: played-on console > release console > game's maker
+function groupMakerOf(g){
+  if(g.console) return makerOfConsole(g.console);
+  if(g.releaseConsole){
+    const m=makerOfConsole(g.releaseConsole);
+    if(m!=='other') return m;
+  }
+  return g.maker||'other';
+}
+function groupConsoleOf(g){
+  return g.console||g.releaseConsole||'Non précisé';
+}
 
 function hierarchyHTML(list){
   // Group: maker (deduced from played-on console) -> console -> games
   const byMaker={};
   list.forEach(g=>{
-    const mk=makerOfConsole(g.console);
+    const mk=groupMakerOf(g);
     if(!byMaker[mk]) byMaker[mk]={};
-    const c=g.console||'Autre';
+    const c=groupConsoleOf(g);
     if(!byMaker[mk][c]) byMaker[mk][c]=[];
     byMaker[mk][c].push(g);
   });
@@ -1031,7 +1043,7 @@ function renderLibrary(){
   buildMakerFilters();
   const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   const filtered=games.filter(g=>{
-    if(makerFilter!=='all'&&makerOfConsole(g.console)!==makerFilter) return false;
+    if(makerFilter!=='all'&&groupMakerOf(g)!==makerFilter) return false;
     if(statusFilter!=='all'&&g.status!==statusFilter) return false;
     return matchesSearch(g, q);
   });
@@ -1795,10 +1807,10 @@ function renderStats(){
   let makerBlocks='';
   MAKER_ORDER.forEach(mk=>{
     const M=MAKERS[mk];
-    const makerGames=fg.filter(g=>makerOfConsole(g.console)===mk);
+    const makerGames=fg.filter(g=>groupMakerOf(g)===mk);
     if(!makerGames.length) return;
     const byConsole={};
-    makerGames.forEach(g=>{ const c=g.console||'Autre'; byConsole[c]=(byConsole[c]||0)+1; });
+    makerGames.forEach(g=>{ const c=groupConsoleOf(g); byConsole[c]=(byConsole[c]||0)+1; });
     const maxC=Math.max(...Object.values(byConsole));
     const cOrder=[...M.consoles.filter(c=>byConsole[c]),...Object.keys(byConsole).filter(c=>!M.consoles.includes(c))];
     makerBlocks+=`<div class="maker-stat-block">
