@@ -49,8 +49,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .main-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px}
 .main-title{font-size:18px;font-weight:700;letter-spacing:-.5px;flex:1}
 .search-wrap{position:relative;flex:1;max-width:280px}
-.search-wrap input{width:100%;padding:7px 12px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border .15s}
+.search-wrap input{width:100%;padding:7px 28px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border .15s}
 .search-wrap input:focus{border-color:var(--border2);background:var(--bg2)}
+.search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:none;background:var(--border);color:var(--text2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.search-clear:hover{background:var(--border2)}
+.rating-prompt{background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#92400E;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px;animation:promptPulse 1.2s ease-in-out 2}
+[data-theme="dark"] .rating-prompt{background:linear-gradient(135deg,#3a2e10,#5a4a18);color:#FDE68A}
+@keyframes promptPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none}
 .main-content{padding:20px 24px;padding-bottom:calc(2rem + env(safe-area-inset-bottom))}
 
@@ -66,6 +71,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 /* ── MAKER SECTION ── */
 .maker-section{margin-bottom:32px}
 .maker-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.maker-header.collapsible,.console-header.collapsible{cursor:pointer;user-select:none}
+.maker-header.collapsible:hover .maker-name,.console-header.collapsible:hover .console-name{opacity:.7}
+.collapse-chevron{font-size:11px;color:var(--text3);flex-shrink:0;margin-left:4px}
 .maker-bar{width:4px;height:22px;border-radius:2px;flex-shrink:0}
 .maker-name{font-size:16px;font-weight:800;letter-spacing:-.4px}
 .maker-count{font-size:11px;color:var(--text3);font-weight:500}
@@ -474,7 +482,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div class="main-title" id="mainTitle">Tous les jeux</div>
       <div class="search-wrap" id="searchWrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Titre, genre, studio, année..." oninput="renderCurrent()">
+        <input type="text" id="searchInput" placeholder="Titre, genre, studio, année..." oninput="renderCurrent();updateSearchClear()">
+        <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none">✕</button>
       </div>
       <button class="theme-toggle-mobile" id="themeToggleMobile" onclick="toggleTheme()">🌙</button>
       <button class="add-btn" style="width:auto;padding:7px 14px;font-size:12px" onclick="openModal(null)">＋</button>
@@ -933,33 +942,59 @@ function hierarchyHTML(list){
     const M=MAKERS[mk];
     const consoles=byMaker[mk];
     const makerTotal=Object.values(consoles).reduce((s,a)=>s+a.length,0);
+    const mkKey='m:'+mk;
+    const mkCollapsed=collapsedSections.has(mkKey);
     // Order consoles by MAKERS definition order, unknowns at end
     const cOrder=[...M.consoles.filter(c=>consoles[c]), ...Object.keys(consoles).filter(c=>!M.consoles.includes(c))];
     html+=`<div class="maker-section">
-      <div class="maker-header">
+      <div class="maker-header collapsible" onclick="toggleSection('${mkKey}')">
         <div class="maker-bar" style="background:${M.color}"></div>
         <div class="maker-name">${M.label}</div>
         <div class="maker-count">${makerTotal} jeu${makerTotal>1?'x':''}</div>
         <div class="maker-line"></div>
+        <span class="collapse-chevron">${mkCollapsed?'▸':'▾'}</span>
       </div>
-      ${cOrder.map(c=>`
+      ${mkCollapsed?'':cOrder.map(c=>{
+        const cKey='c:'+mk+':'+c;
+        const cCollapsed=collapsedSections.has(cKey);
+        return `
       <div class="console-section">
-        <div class="console-header">
+        <div class="console-header collapsible" onclick="toggleSection('${cKey.replace(/'/g,"\\'")}')">
           <div class="console-name" style="color:${M.color}">${esc(c)}</div>
           <div class="console-count">· ${consoles[c].length}</div>
+          <span class="collapse-chevron">${cCollapsed?'▸':'▾'}</span>
         </div>
-        <div class="cards-grid">${consoles[c].sort((a,b)=>{
+        ${cCollapsed?'':`<div class="cards-grid">${consoles[c].sort((a,b)=>{
           if(sortMode==='completed'){
             const da=lastSession(a)?.end||'0000';
             const db=lastSession(b)?.end||'0000';
             return db.localeCompare(da);
           }
           return (b.release||'0000').localeCompare(a.release||'0000');
-        }).map(g=>gameCardHTML(g)).join('')}</div>
-      </div>`).join('')}
+        }).map(g=>gameCardHTML(g)).join('')}</div>`}
+      </div>`;}).join('')}
     </div>`;
   });
   return html;
+}
+
+// Collapsed sections (persisted)
+let collapsedSections=(()=>{try{return new Set(JSON.parse(localStorage.getItem('gamelog_collapsed')||'[]'));}catch{return new Set();}})();
+function toggleSection(key){
+  if(collapsedSections.has(key)) collapsedSections.delete(key);
+  else collapsedSections.add(key);
+  try{localStorage.setItem('gamelog_collapsed',JSON.stringify([...collapsedSections]));}catch{}
+  renderCurrent();
+}
+// Search clear button
+function updateSearchClear(){
+  document.getElementById('searchClear').style.display=document.getElementById('searchInput').value?'flex':'none';
+}
+function clearSearch(){
+  document.getElementById('searchInput').value='';
+  updateSearchClear();
+  renderCurrent();
+  document.getElementById('searchInput').focus();
 }
 
 // Search match: title, studio, console, genre, release year
@@ -1069,6 +1104,19 @@ function openPanel(id){
     coverEl.onerror=function(){ this.style.display='none'; };
   } else { coverEl.style.display='none'; }
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
+  // Rating prompt after completion
+  const oldBanner=document.getElementById('ratingPromptBanner');
+  if(oldBanner) oldBanner.remove();
+  if(promptRating&&!g.rating&&g.status==='done'){
+    const panelBody=document.querySelector('.panel-body');
+    if(panelBody){
+      const banner=document.createElement('div');
+      banner.id='ratingPromptBanner';
+      banner.className='rating-prompt';
+      banner.innerHTML='🎉 <strong>Terminé !</strong> Mets-lui une note ↓';
+      panelBody.insertBefore(banner, panelBody.firstChild);
+    }
+  } else { promptRating=false; }
   document.getElementById('pHoursNum').textContent=totalHours(g)||'—';
   // Chips
   const sessions=getSessions(g);
@@ -1108,7 +1156,8 @@ function openPanel(id){
     <button class="btn-danger" onclick="deleteGame('${id}')">Supprimer</button>`;
   document.getElementById('panelOverlay').classList.add('on');
 }
-function closePanel(){ document.getElementById('panelOverlay').classList.remove('on'); panelId=null; }
+function closePanel(){ document.getElementById('panelOverlay').classList.remove('on'); panelId=null; promptRating=false; }
+let promptRating=false;
 function setPanelStatus(s){
   const g=games.find(x=>x.id===panelId); if(!g) return;
   if(!g.sessions) g.sessions=[];
@@ -1122,6 +1171,7 @@ function setPanelStatus(s){
     const ls=lastSession(g);
     if(ls&&!ls.end) ls.end=today();
     else if(!g.sessions.length) g.sessions.push({start:today(),end:today()});
+    if(!g.rating) promptRating=true;
   }
   save(); openPanel(panelId); renderCurrent();
 }
@@ -1137,6 +1187,7 @@ function setPanelRating(r){
   g.rating=g.rating===r?0:r;
   save();
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
+  if(promptRating&&g.rating){ promptRating=false; const b=document.getElementById('ratingPromptBanner'); if(b) b.remove(); }
   renderCurrent();
 }
 function savePanelNote(){
