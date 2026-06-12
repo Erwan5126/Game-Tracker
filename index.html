@@ -554,13 +554,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     </div>
     <div class="fields-2">
       <div class="field">
-        <label>Constructeur</label>
+        <label>Constructeur / Éditeur</label>
         <select id="mMaker" onchange="populateConsoles()"></select>
+        <div class="field-hint">First-party ou Tiers / Indé</div>
       </div>
       <div class="field">
-        <label>Console</label>
-        <input type="text" id="mConsole" list="consoleList" placeholder="Ex: PS5, Switch 2...">
-        <datalist id="consoleList"></datalist>
+        <label>Console de sortie</label>
+        <input type="text" id="mReleaseConsole" list="consoleList" placeholder="Ex: PS5, Multi...">
+        <div class="field-hint">Plateforme d'origine du jeu</div>
       </div>
     </div>
     <div class="fields-2">
@@ -590,6 +591,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
     <!-- TAB: TRACKING -->
     <div id="modalTabTracking" style="display:none">
+    <div class="field">
+      <label>Joué sur (console)</label>
+      <input type="text" id="mConsole" list="consoleList" placeholder="Ex: PS5, Switch 2, Steam...">
+      <datalist id="consoleList"></datalist>
+      <div class="field-hint">La console/plateforme sur laquelle TU y joues</div>
+    </div>
     <div class="fields-2">
       <div class="field">
         <label>Statut</label>
@@ -1012,6 +1019,8 @@ function openPanel(id){
   if(g.priority) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Priorité</div><div class="panel-chip-val">${PRIORITY_LABELS[g.priority]||g.priority}</div></div>`;
   if(g.estHours) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Durée estimée</div><div class="panel-chip-val">~${g.estHours}h</div></div>`;
   if(g.release) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie</div><div class="panel-chip-val">${fmt(g.release)}</div></div>`;
+  if(g.releaseConsole) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie sur</div><div class="panel-chip-val">${esc(g.releaseConsole)}</div></div>`;
+  if(g.console) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Joué sur</div><div class="panel-chip-val">${esc(g.console)}</div></div>`;
   sessions.forEach((s,i)=>{
     const label=sessions.length>1?`Période ${i+1}`:'Période';
     const val=`${fmt(s.start)||'?'} → ${s.end?fmt(s.end):'en cours'}`;
@@ -1096,12 +1105,13 @@ function populateMakers(){
 }
 function populateConsoles(selectedConsole){
   const mk=document.getElementById('mMaker').value;
-  const knownConsoles=MAKERS[mk]?.consoles||[];
-  // Also include any custom consoles already used for this maker
-  const usedConsoles=[...new Set(games.filter(g=>g.maker===mk).map(g=>g.console).filter(Boolean))];
-  const all=[...new Set([...knownConsoles,...usedConsoles])];
+  // Maker's consoles first, then all others, then custom used ones
+  const makerConsoles=MAKERS[mk]?.consoles||[];
+  const allKnown=MAKER_ORDER.flatMap(m=>MAKERS[m].consoles);
+  const used=[...new Set(games.flatMap(g=>[g.console,g.releaseConsole]).filter(Boolean))];
+  const all=[...new Set([...makerConsoles,...allKnown,...used])];
   document.getElementById('consoleList').innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');
-  document.getElementById('mConsole').value=selectedConsole||all[0]||'';
+  if(selectedConsole!==undefined) document.getElementById('mConsole').value=selectedConsole||'';
 }
 function populateSuggestions(){
   const genres=[...new Set(games.flatMap(g=>g.genre?g.genre.split(',').map(s=>s.trim()).filter(Boolean):[]))].sort();
@@ -1164,6 +1174,7 @@ function openModal(id, tab){
     document.getElementById('mCover').value=g.cover||'';
     document.getElementById('mMaker').value=g.maker||'other';
     populateConsoles(g.console);
+    document.getElementById('mReleaseConsole').value=g.releaseConsole||'';
     document.getElementById('mStatus').value=g.status||'todo';
     document.getElementById('mStudio').value=g.studio||'';
     document.getElementById('mRelease').value=g.release||'';
@@ -1182,7 +1193,8 @@ function openModal(id, tab){
     document.getElementById('mTitle').value='';
     document.getElementById('mCover').value='';
     document.getElementById('mMaker').value='other';
-    populateConsoles();
+    populateConsoles('');
+    document.getElementById('mReleaseConsole').value='';
     document.getElementById('mStatus').value='todo';
     document.getElementById('mStudio').value='';
     document.getElementById('mRelease').value='';
@@ -1228,6 +1240,7 @@ function saveGame(){
     cover:document.getElementById('mCover').value.trim(),
     maker:document.getElementById('mMaker').value,
     console:document.getElementById('mConsole').value,
+    releaseConsole:document.getElementById('mReleaseConsole').value.trim(),
     status,
     studio:document.getElementById('mStudio').value.trim(),
     release:document.getElementById('mRelease').value,
