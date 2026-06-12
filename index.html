@@ -988,7 +988,7 @@ function gameCardHTML(g){
     <div class="game-card-info">
     <div class="game-card-title">${esc(g.title)}</div>
     <div class="game-card-meta">
-      <span>${esc(g.console||'')}</span>
+      ${g.releaseConsole&&g.maker!=='other'?`<span>${esc(g.releaseConsole)}</span>`:''}
       ${g.release?`<span>${g.release.slice(0,4)}</span>`:''}
       ${g.studio?`<span>${esc(g.studio)}</span>`:''}
       ${g.genre?`<span>${esc(g.genre)}</span>`:''}
