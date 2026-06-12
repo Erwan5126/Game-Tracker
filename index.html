@@ -128,6 +128,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .wrap-card-sub{font-size:11px;font-weight:500;opacity:.85;margin-top:2px}
 .wrap-card-cover{position:absolute;right:-8px;top:50%;transform:translateY(-50%) rotate(6deg);width:64px;height:86px;border-radius:6px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .wrap-card-pie{position:absolute;right:14px;top:14px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+.wrap-card-legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18)}
+.wrap-legend-item{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:600}
+.wrap-legend-dot{width:7px;height:7px;border-radius:50%;background:#fff;flex-shrink:0}
 .wrap-card.c1{background:linear-gradient(135deg,#1D3557,#457B9D)}
 .wrap-card.c2{background:linear-gradient(135deg,#9D0208,#E63946)}
 .wrap-card.c3{background:linear-gradient(135deg,#2A6F4E,#2A9D8F)}
@@ -1818,6 +1821,19 @@ function renderStats(){
     const consolePie=consoleSorted.length>1?pieSVG(consoleSorted.map(([,c])=>c),56):'';
     const genrePct=topGenre&&fg.length?Math.round(topGenre[1]/genresSorted.reduce((s,[,c])=>s+c,0)*100):0;
     const consolePct=topConsole&&consoleSorted.length?Math.round(topConsole[1]/consoleSorted.reduce((s,[,c])=>s+c,0)*100):0;
+    // Legend: top entries with matching opacity dots
+    function pieLegend(entries){
+      if(entries.length<2) return '';
+      const ops=[1,.5,.32,.2];
+      const shown=entries.slice(0,4);
+      const rest=entries.length-4;
+      return `<div class="wrap-card-legend">
+        ${shown.map(([name,c],i)=>`<span class="wrap-legend-item"><span class="wrap-legend-dot" style="opacity:${ops[i]}"></span>${esc(name)} <span style="opacity:.7">${c}</span></span>`).join('')}
+        ${rest>0?`<span class="wrap-legend-item" style="opacity:.6">+${rest} autres</span>`:''}
+      </div>`;
+    }
+    const genreLegend=pieLegend(genresSorted);
+    const consoleLegend=pieLegend(consoleSorted);
 
     wrappedHTML=`
     <div class="wrap-hero">
@@ -1852,6 +1868,7 @@ function renderStats(){
         <div class="wrap-card-label">Genre favori</div>
         <div class="wrap-card-value">${esc(topGenre[0])}</div>
         <div class="wrap-card-sub">${topGenre[1]} jeu${topGenre[1]>1?'x':''}${genresSorted.length>1?` · ${genrePct}%`:''}</div>
+        ${genreLegend}
       </div>`:''}
       ${topConsole?`<div class="wrap-card c5">
         ${consolePie}
@@ -1859,6 +1876,7 @@ function renderStats(){
         <div class="wrap-card-label">Plateforme favorite</div>
         <div class="wrap-card-value">${esc(topConsole[0])}</div>
         <div class="wrap-card-sub">${topConsole[1]} jeu${topConsole[1]>1?'x':''}${consoleSorted.length>1?` · ${consolePct}%`:''}</div>
+        ${consoleLegend}
       </div>`:''}
       ${marathon&&marathonDays>13?`<div class="wrap-card c6 clickable" onclick="openPanel('${marathon.id}')">
         <div class="wrap-card-emoji">🐢</div>
