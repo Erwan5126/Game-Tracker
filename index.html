@@ -155,6 +155,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .wrap-month-bar.empty{background:var(--bg3)}
 .wrap-month-lbl{font-size:8px;font-weight:600;color:var(--text3)}
 .wrap-month-col.best .wrap-month-lbl{color:var(--text);font-weight:800}
+.wrap-mosaic-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:24px}
+.wrap-mosaic{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.wrap-mosaic-cover{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:6px;cursor:pointer;transition:transform .12s;box-shadow:var(--shadow)}
+.wrap-mosaic-cover:hover{transform:scale(1.06);z-index:2;position:relative}
+.wrap-mosaic-ph{width:100%;aspect-ratio:2/3;border-radius:6px;cursor:pointer;background:linear-gradient(135deg,var(--bg3),var(--border));display:flex;align-items:center;justify-content:center;text-align:center;font-size:8px;font-weight:700;color:var(--text2);padding:4px;line-height:1.2;overflow:hidden;transition:transform .12s}
+.wrap-mosaic-ph:hover{transform:scale(1.06)}
 
 /* ── STATS ── */
 .stats-hero{display:flex;gap:20px;align-items:center;margin-bottom:28px;flex-wrap:wrap}
@@ -1994,6 +2000,24 @@ function renderStats(){
       </div>
       ${bestMonth>=0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">🔥 Ton mois le plus actif : <strong style="color:var(--text)">${MONTHS[bestMonth]}</strong> (~${Math.round(monthActivity[bestMonth])}h)</div>`:''}
     </div>`:''}
+    ${(()=>{
+      // Mosaic: completed games in chronological completion order
+      const completed=fg.filter(g=>g.status==='done'&&(!sy||getSessions(g).some(s=>(s.end||'').startsWith(sy))))
+        .map(g=>({g, end:(sy?[...getSessions(g)].reverse().find(s=>(s.end||'').startsWith(sy))?.end:lastSession(g)?.end)||'9999'}))
+        .sort((a,b)=>a.end.localeCompare(b.end));
+      if(!completed.length) return '';
+      return `<div class="wrap-mosaic-wrap">
+        <div class="wrap-months-title">${completed.length} jeu${completed.length>1?'x':''} terminé${completed.length>1?'s':''} ${sy?'en '+sy:''} — dans l'ordre</div>
+        <div class="wrap-mosaic">
+          ${completed.map(({g,end})=>{
+            const dateTip=end&&end!=='9999'?fmt(end):'';
+            return g.cover
+              ?`<img class="wrap-mosaic-cover" src="${esc(g.cover)}" alt="${esc(g.title)}" title="${esc(g.title)}${dateTip?' · '+dateTip:''}" onclick="openPanel('${g.id}')" onerror="this.outerHTML='<div class=\\'wrap-mosaic-ph\\' title=\\'${esc(g.title).replace(/'/g,'&#39;')}\\' onclick=\\'openPanel(&quot;${g.id}&quot;)\\'>${esc(g.title).slice(0,18).replace(/'/g,'&#39;')}</div>'">`
+              :`<div class="wrap-mosaic-ph" title="${esc(g.title)}${dateTip?' · '+dateTip:''}" onclick="openPanel('${g.id}')">${esc(g.title).slice(0,18)}</div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    })()}
     `;
   }
 
