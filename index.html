@@ -832,7 +832,7 @@ function updateBadges(){
 
 // ─── FILTERS ───
 function buildMakerFilters(){
-  const present=[...new Set(games.map(g=>g.maker))].filter(Boolean);
+  const present=[...new Set(games.map(g=>makerOfConsole(g.console)))].filter(Boolean);
   const ordered=MAKER_ORDER.filter(m=>present.includes(m));
   const bar=document.getElementById('libFilters');
   bar.querySelectorAll('[data-maker]:not([data-maker="all"])').forEach(el=>el.remove());
@@ -868,11 +868,26 @@ function setSortMode(m,btn){
 }
 
 // ─── HIERARCHICAL RENDER (maker -> console -> cards) ───
+// Deduce maker from console name (for library grouping by played-on console)
+function makerOfConsole(consoleName){
+  if(!consoleName) return 'other';
+  const cl=consoleName.toLowerCase();
+  // Exact match in maker console lists (sony/nintendo/microsoft only)
+  for(const mk of ['sony','nintendo','microsoft']){
+    if(MAKERS[mk].consoles.some(c=>c.toLowerCase()===cl)) return mk;
+  }
+  // Fuzzy fallback
+  if(/^ps\d|playstation|psp|vita/.test(cl)) return 'sony';
+  if(/switch|wii|gamecube|n64|nes|snes|3ds|game boy|gba|\bds\b/.test(cl)) return 'nintendo';
+  if(/xbox/.test(cl)) return 'microsoft';
+  return 'other';
+}
+
 function hierarchyHTML(list){
-  // Group: maker -> console -> games
+  // Group: maker (deduced from played-on console) -> console -> games
   const byMaker={};
   list.forEach(g=>{
-    const mk=g.maker||'other';
+    const mk=makerOfConsole(g.console);
     if(!byMaker[mk]) byMaker[mk]={};
     const c=g.console||'Autre';
     if(!byMaker[mk][c]) byMaker[mk][c]=[];
@@ -916,7 +931,7 @@ function renderLibrary(){
   buildMakerFilters();
   const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   const filtered=games.filter(g=>{
-    if(makerFilter!=='all'&&g.maker!==makerFilter) return false;
+    if(makerFilter!=='all'&&makerOfConsole(g.console)!==makerFilter) return false;
     if(statusFilter!=='all'&&g.status!==statusFilter) return false;
     if(q&&!g.title.toLowerCase().includes(q)&&!(g.studio||'').toLowerCase().includes(q)&&!(g.console||'').toLowerCase().includes(q)) return false;
     return true;
@@ -1648,7 +1663,7 @@ function renderStats(){
   let makerBlocks='';
   MAKER_ORDER.forEach(mk=>{
     const M=MAKERS[mk];
-    const makerGames=fg.filter(g=>g.maker===mk);
+    const makerGames=fg.filter(g=>makerOfConsole(g.console)===mk);
     if(!makerGames.length) return;
     const byConsole={};
     makerGames.forEach(g=>{ const c=g.console||'Autre'; byConsole[c]=(byConsole[c]||0)+1; });
