@@ -127,6 +127,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .wrap-card-value{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1.15}
 .wrap-card-sub{font-size:11px;font-weight:500;opacity:.85;margin-top:2px}
 .wrap-card-cover{position:absolute;right:-8px;top:50%;transform:translateY(-50%) rotate(6deg);width:64px;height:86px;border-radius:6px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.wrap-card-pie{position:absolute;right:14px;top:14px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
 .wrap-card.c1{background:linear-gradient(135deg,#1D3557,#457B9D)}
 .wrap-card.c2{background:linear-gradient(135deg,#9D0208,#E63946)}
 .wrap-card.c3{background:linear-gradient(135deg,#2A6F4E,#2A9D8F)}
@@ -1741,17 +1742,38 @@ function renderStats(){
     fg.forEach(g=>{ if(g.console) consoleCounts[g.console]=(consoleCounts[g.console]||0)+1; });
     const topConsole=Object.entries(consoleCounts).sort((a,b)=>b[1]-a[1])[0]||null;
     // Monthly activity (sessions touching each month)
-    const monthActivity=Array(12).fill(0);
+    const monthActivity=Array(12).fill(0); // heures au prorata par mois
     if(sy){
-      fg.forEach(g=>getSessions(g).forEach(s=>{
-        const gs=s.start||s.end||'', ge=s.end||(g.status==='doing'&&!s.end?today():s.start)||'';
-        if(!gs) return;
-        for(let m=0;m<12;m++){
-          const ms=`${sy}-${String(m+1).padStart(2,'0')}`;
-          const mEnd=ms+'-31';
-          if(gs<=mEnd&&ge>=ms+'-01') monthActivity[m]++;
-        }
-      }));
+      fg.forEach(g=>{
+        const sessions=getSessions(g);
+        // Durée totale (jours) de toutes les sessions pour répartir g.hours si pas d'heures/session
+        const sessDays=sessions.map(s=>{
+          const gs=s.start||s.end||'', ge=s.end||(g.status==='doing'&&!s.end?today():s.start)||'';
+          if(!gs) return 0;
+          return Math.max(1, Math.round((new Date(ge)-new Date(gs))/86400000)+1);
+        });
+        const totalDays=sessDays.reduce((a,b)=>a+b,0)||1;
+        const hasSessHours=sessions.some(s=>parseFloat(s.hours)>0);
+        sessions.forEach((s,si)=>{
+          const gs=s.start||s.end||'', ge=s.end||(g.status==='doing'&&!s.end?today():s.start)||'';
+          if(!gs) return;
+          // Heures de cette session : par session si dispo, sinon part de g.hours au prorata de la durée
+          const sessHours=hasSessHours?(parseFloat(s.hours)||0):((g.hours||0)*sessDays[si]/totalDays);
+          if(!sessHours) return;
+          const days=sessDays[si];
+          // Répartir les heures sur les mois traversés au prorata des jours
+          const start=new Date(gs+'T12:00:00'), end=new Date(ge+'T12:00:00');
+          for(let m=0;m<12;m++){
+            const mStart=new Date(sy,m,1,12), mEnd=new Date(sy,m+1,0,12);
+            const oS=start>mStart?start:mStart;
+            const oE=end<mEnd?end:mEnd;
+            if(oS<=oE){
+              const dInMonth=Math.round((oE-oS)/86400000)+1;
+              monthActivity[m]+=sessHours*dInMonth/days;
+            }
+          }
+        });
+      });
     }
     const maxMonth=Math.max(1,...monthActivity);
     const bestMonth=sy&&Math.max(...monthActivity)>0?monthActivity.indexOf(Math.max(...monthActivity)):-1;
@@ -1763,6 +1785,39 @@ function renderStats(){
         if(days>marathonDays){ marathonDays=days; marathon=g; }
       }
     }));
+
+    // Mini pie chart SVG: top segment opaque, others fading white
+    function pieSVG(counts, size){
+      const total=counts.reduce((s,c)=>s+c,0);
+      if(!total) return '';
+      const cx=size/2, cy=size/2, r=size/2-1;
+      // Group beyond 5 into "others"
+      let list=counts.slice(0,5);
+      const rest=counts.slice(5).reduce((s,c)=>s+c,0);
+      if(rest) list.push(rest);
+      const ops=[1,.5,.32,.2,.13,.08];
+      let angle=-90, paths='';
+      list.forEach((c,i)=>{
+        const sweep=c/total*360;
+        if(sweep<=0) return;
+        if(sweep>=359.9){
+          paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,${ops[i]})"/>`;
+        } else {
+          const a1=angle*Math.PI/180, a2=(angle+sweep)*Math.PI/180;
+          const x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+          const x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+          const large=sweep>180?1:0;
+          paths+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="rgba(255,255,255,${ops[i]})"/>`;
+        }
+        angle+=sweep;
+      });
+      return `<svg class="wrap-card-pie" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${paths}</svg>`;
+    }
+    const genrePie=genresSorted.length>1?pieSVG(genresSorted.map(([,c])=>c),56):'';
+    const consoleSorted=Object.entries(consoleCounts).sort((a,b)=>b[1]-a[1]);
+    const consolePie=consoleSorted.length>1?pieSVG(consoleSorted.map(([,c])=>c),56):'';
+    const genrePct=topGenre&&fg.length?Math.round(topGenre[1]/genresSorted.reduce((s,[,c])=>s+c,0)*100):0;
+    const consolePct=topConsole&&consoleSorted.length?Math.round(topConsole[1]/consoleSorted.reduce((s,[,c])=>s+c,0)*100):0;
 
     wrappedHTML=`
     <div class="wrap-hero">
@@ -1792,16 +1847,18 @@ function renderStats(){
         ${doneInPeriod>0?`<div class="wrap-card-sub">${sy?'cette année':'au total'}</div>`:''}
       </div>
       ${topGenre?`<div class="wrap-card c4">
+        ${genrePie}
         <div class="wrap-card-emoji">🏷️</div>
         <div class="wrap-card-label">Genre favori</div>
         <div class="wrap-card-value">${esc(topGenre[0])}</div>
-        <div class="wrap-card-sub">${topGenre[1]} jeu${topGenre[1]>1?'x':''}</div>
+        <div class="wrap-card-sub">${topGenre[1]} jeu${topGenre[1]>1?'x':''}${genresSorted.length>1?` · ${genrePct}%`:''}</div>
       </div>`:''}
       ${topConsole?`<div class="wrap-card c5">
+        ${consolePie}
         <div class="wrap-card-emoji">🎮</div>
         <div class="wrap-card-label">Plateforme favorite</div>
         <div class="wrap-card-value">${esc(topConsole[0])}</div>
-        <div class="wrap-card-sub">${topConsole[1]} jeu${topConsole[1]>1?'x':''}</div>
+        <div class="wrap-card-sub">${topConsole[1]} jeu${topConsole[1]>1?'x':''}${consoleSorted.length>1?` · ${consolePct}%`:''}</div>
       </div>`:''}
       ${marathon&&marathonDays>13?`<div class="wrap-card c6 clickable" onclick="openPanel('${marathon.id}')">
         <div class="wrap-card-emoji">🐢</div>
@@ -1814,11 +1871,11 @@ function renderStats(){
       <div class="wrap-months-title">Activité mois par mois</div>
       <div class="wrap-months-bars">
         ${monthActivity.map((c,m)=>`<div class="wrap-month-col ${m===bestMonth?'best':''}">
-          <div class="wrap-month-bar ${c?'':'empty'}" style="height:${Math.max(3,c/maxMonth*100)}%" title="${MONTHS[m]}: ${c} jeu${c>1?'x':''}"></div>
+          <div class="wrap-month-bar ${c?'':'empty'}" style="height:${Math.max(3,c/maxMonth*100)}%" title="${MONTHS[m]}: ${Math.round(c)}h"></div>
           <div class="wrap-month-lbl">${MONTHS[m].slice(0,1)}</div>
         </div>`).join('')}
       </div>
-      ${bestMonth>=0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">🔥 Ton mois le plus actif : <strong style="color:var(--text)">${MONTHS[bestMonth]}</strong></div>`:''}
+      ${bestMonth>=0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">🔥 Ton mois le plus actif : <strong style="color:var(--text)">${MONTHS[bestMonth]}</strong> (~${Math.round(monthActivity[bestMonth])}h)</div>`:''}
     </div>`:''}
     `;
   }
