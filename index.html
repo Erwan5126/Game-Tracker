@@ -332,8 +332,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+@media(max-width:600px){
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{max-width:100%;border-radius:16px 16px 0 0;max-height:calc(100dvh - 3rem)}
+}
 .modal-overlay.on{display:flex}
-.modal{background:var(--bg2);border-radius:14px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-md)}
+.modal{background:var(--bg2);border-radius:14px;padding:24px;padding-bottom:0;width:100%;max-width:460px;max-height:85vh;max-height:calc(100dvh - 4rem);overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-md)}
 .modal-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:14px}
 .modal-tabs{display:flex;gap:4px;background:var(--bg3);border-radius:9px;padding:3px;margin-bottom:18px}
 .modal-tab{flex:1;padding:7px 10px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text3);cursor:pointer;transition:all .12s}
@@ -347,7 +351,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .modal-stars{display:flex;gap:4px;padding:4px 0}
 .mstar{font-size:22px;color:#E5E4E0;cursor:pointer;transition:color .1s}
 .mstar.on{color:var(--accent)}
-.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions{display:flex;gap:8px;margin-top:20px;position:sticky;bottom:0;background:var(--bg2);padding:12px 0 calc(20px + env(safe-area-inset-bottom));border-top:1px solid var(--border);z-index:5}
 .status-disabled{opacity:.35;pointer-events:none}
 .session-row{display:flex;gap:6px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
 .session-row input{flex:1;min-width:0;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none}
