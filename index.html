@@ -105,6 +105,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .detail-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
 .detail-badge.ownership{background:#EFF6FF;color:#1E40AF}
 .detail-badge.dlc{background:#FCE7F3;color:#BE185D}
+.detail-badge.edition{background:#E0F2FE;color:#0369A1}
+[data-theme="dark"] .detail-badge.edition{background:#1a3a4a;color:#7DD3FC}
+/* Completion stamps (wax seal style) */
+.stamp{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;transform:rotate(12deg);box-shadow:0 2px 6px rgba(0,0,0,.25),inset 0 1px 2px rgba(255,255,255,.5),inset 0 -2px 3px rgba(0,0,0,.2);border:2px solid rgba(255,255,255,.4);z-index:3;pointer-events:none}
+.stamp.platinum{background:radial-gradient(circle at 35% 30%,#FDE68A,#D4A017 60%,#A87B0A);color:#5C4505}
+.stamp.hundred{background:radial-gradient(circle at 35% 30%,#F1F5F9,#94A3B8 60%,#64748B);color:#1E293B}
+.stamp-card{top:6px;right:6px;width:30px;height:30px;font-size:9px}
+.stamp-card.platinum{font-size:14px}
+.stamp-panel{top:14px;right:52px;width:52px;height:52px;font-size:13px;transform:rotate(10deg)}
+.stamp-panel.platinum{font-size:24px}
 .detail-badge.completion{background:#F3E8FF;color:#7C3AED}
 .detail-badge.format{background:#FEF3C7;color:#92400E}
 .detail-badge.priority-high{background:#FEE2E2;color:#DC2626}
@@ -645,6 +655,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div class="field-hint">Pour regrouper les jeux d'une même série</div>
     </div>
     <div class="field">
+      <label>Édition / Type</label>
+      <select id="mEdition">
+        <option value="">Jeu standard</option>
+        <option value="remake">Remake</option>
+        <option value="remaster">Remaster</option>
+        <option value="bundle">Bundle / Collection</option>
+        <option value="expanded">Expanded Game</option>
+        <option value="portage">Portage</option>
+      </select>
+    </div>
+    <div class="field">
       <label>DLC / Extension de</label>
       <select id="mParent">
         <option value="">— Jeu de base (pas un DLC) —</option>
@@ -768,6 +789,7 @@ const OWNERSHIP_LABELS = {owned:'Possédé',wishlist:'Wishlist',gamepass:'Game P
 const COMPLETION_LABELS = {not_started:'Pas commencé',main:'Histoire principale',main_extras:'Principal + annexes',hundred:'100%',platinum:'🏆 Platiné / Tous succès',abandoned:'Abandonné'};
 const FORMAT_LABELS = {digital:'Dématérialisé',physical:'Physique',both:'Physique + Digital'};
 const PRIORITY_LABELS = {high:'Haute',medium:'Moyenne',low:'Basse'};
+const EDITION_LABELS = {remake:'Remake',remaster:'Remaster',bundle:'Bundle',expanded:'Expanded Game',portage:'Portage'};
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── STATE ───
@@ -1100,6 +1122,7 @@ function gameCardHTML(g){
   for(let i=1;i<=5;i++) stars+=`<span class="star-mini ${i<=(g.rating||0)?'on':''}">★</span>`;
   stars+='</div>';
   return `<div class="game-card" onclick="openPanel('${g.id}')" style="border-left:4px solid ${makerOf(g).color}">
+    ${g.completion==='platinum'?'<div class="stamp stamp-card platinum">🏆</div>':g.completion==='hundred'?'<div class="stamp stamp-card hundred">100%</div>':''}
     ${g.cover?`<img class="game-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=game-cover-ph>🎮</div>'">`:`<div class="game-cover-ph">🎮</div>`}
     <div class="game-card-info">
     <div class="game-card-title">${esc(g.title)}</div>
@@ -1113,7 +1136,7 @@ function gameCardHTML(g){
       <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
       ${g.status==='todo'&&g.priority?`<span class="detail-badge priority-${g.priority}">${g.priority==='high'?'🔥 ':''}${PRIORITY_LABELS[g.priority]}</span>`:''}
       ${g.parentId?`<span class="detail-badge dlc">DLC</span>`:''}
-      ${g.completion?`<span class="detail-badge completion">${COMPLETION_LABELS[g.completion]||g.completion}</span>`:''}
+      ${g.edition?`<span class="detail-badge edition">${EDITION_LABELS[g.edition]||g.edition}</span>`:''}
       ${g.ownership?`<span class="detail-badge ownership">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
       ${totalHours(g)?`<span class="hours-badge">🕒 ${totalHours(g)}h</span>`:''}
       ${g.status==='todo'&&g.estHours?`<span class="detail-badge est">⏳ ~${g.estHours}h</span>`:''}
@@ -1130,6 +1153,20 @@ function openPanel(id){
   const M=makerOf(g);
   document.getElementById('pMakerBar').style.background=M.color;
   document.getElementById('pPlatLabel').textContent=`${M.label} · ${g.console||''}`;
+  // Completion stamp in panel head
+  const oldStamp=document.getElementById('panelStamp');
+  if(oldStamp) oldStamp.remove();
+  if(g.completion==='platinum'||g.completion==='hundred'){
+    const head=document.querySelector('.panel-head');
+    if(head){
+      const st=document.createElement('div');
+      st.id='panelStamp';
+      st.className='stamp stamp-panel '+g.completion;
+      st.textContent=g.completion==='platinum'?'🏆':'100%';
+      head.style.position='relative';
+      head.appendChild(st);
+    }
+  }
   document.getElementById('pTitle').textContent=g.title;
   document.getElementById('pStudio').textContent=[g.studio,g.genre].filter(Boolean).join(' · ');
   // Cover
@@ -1157,6 +1194,7 @@ function openPanel(id){
   // Chips
   const sessions=getSessions(g);
   let chipsHTML=`<div class="panel-chip"><div class="panel-chip-lbl">Statut</div><div class="panel-chip-val">${STATUS_LABELS[g.status]}</div></div>`;
+  if(g.edition) chipsHTML+=`<div class="panel-chip" style="border-color:#7DD3FC"><div class="panel-chip-lbl">Type</div><div class="panel-chip-val">${EDITION_LABELS[g.edition]||g.edition}</div></div>`;
   if(g.ownership) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Possession</div><div class="panel-chip-val">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</div></div>`;
   if(g.completion) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Complétion</div><div class="panel-chip-val">${COMPLETION_LABELS[g.completion]||g.completion}</div></div>`;
   if(g.format) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Format</div><div class="panel-chip-val">${FORMAT_LABELS[g.format]||g.format}</div></div>`;
@@ -1342,6 +1380,7 @@ function openModal(id, tab){
     document.getElementById('mRelease').value=g.release||'';
     document.getElementById('mGenre').value=g.genre||'';
     document.getElementById('mFranchise').value=g.franchise||'';
+    document.getElementById('mEdition').value=g.edition||'';
     document.getElementById('mOwnership').value=g.ownership||'';
     document.getElementById('mFormat').value=g.format||'';
     document.getElementById('mCompletion').value=g.completion||'';
@@ -1363,6 +1402,7 @@ function openModal(id, tab){
     document.getElementById('mRelease').value='';
     document.getElementById('mGenre').value='';
     document.getElementById('mFranchise').value='';
+    document.getElementById('mEdition').value='';
     document.getElementById('mOwnership').value='';
     document.getElementById('mFormat').value='';
     document.getElementById('mCompletion').value='';
@@ -1410,6 +1450,7 @@ function saveGame(){
     release:document.getElementById('mRelease').value,
     genre:document.getElementById('mGenre').value.trim(),
     franchise:document.getElementById('mFranchise').value.trim(),
+    edition:document.getElementById('mEdition').value,
     ownership:document.getElementById('mOwnership').value,
     format:document.getElementById('mFormat').value,
     completion:document.getElementById('mCompletion').value,
