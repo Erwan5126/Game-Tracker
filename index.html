@@ -2001,16 +2001,34 @@ function renderStats(){
       ${bestMonth>=0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">🔥 Ton mois le plus actif : <strong style="color:var(--text)">${MONTHS[bestMonth]}</strong> (~${Math.round(monthActivity[bestMonth])}h)</div>`:''}
     </div>`:''}
     ${(()=>{
-      // Mosaic: completed games in chronological completion order
-      const completed=fg.filter(g=>g.status==='done'&&(!sy||getSessions(g).some(s=>(s.end||'').startsWith(sy))))
-        .map(g=>({g, end:(sy?[...getSessions(g)].reverse().find(s=>(s.end||'').startsWith(sy))?.end:lastSession(g)?.end)||'9999'}))
-        .sort((a,b)=>a.end.localeCompare(b.end));
-      if(!completed.length) return '';
+      // Mosaic: all games with a session touching the period, most recent activity first
+      const todayS=today();
+      const played=fg.map(g=>{
+        // Latest activity date within the period
+        let latest='';
+        getSessions(g).forEach(s=>{
+          const gs=s.start||s.end||'';
+          const ge=s.end||(g.status==='doing'&&!s.end?todayS:s.start)||'';
+          if(!gs) return;
+          if(sy){
+            const ys=sy+'-01-01', ye=sy+'-12-31';
+            if(gs<=ye&&ge>=ys){
+              const capped=ge>ye?ye:ge;
+              if(capped>latest) latest=capped;
+            }
+          } else {
+            if(ge>latest) latest=ge;
+          }
+        });
+        return {g, latest};
+      }).filter(x=>x.latest)
+        .sort((a,b)=>b.latest.localeCompare(a.latest));
+      if(!played.length) return '';
       return `<div class="wrap-mosaic-wrap">
-        <div class="wrap-months-title">${completed.length} jeu${completed.length>1?'x':''} terminé${completed.length>1?'s':''} ${sy?'en '+sy:''} — dans l'ordre</div>
+        <div class="wrap-months-title">${played.length} jeu${played.length>1?'x':''} joué${played.length>1?'s':''} ${sy?'en '+sy:''} — du plus récent au plus ancien</div>
         <div class="wrap-mosaic">
-          ${completed.map(({g,end})=>{
-            const dateTip=end&&end!=='9999'?fmt(end):'';
+          ${played.map(({g,latest})=>{
+            const dateTip=fmt(latest);
             return g.cover
               ?`<img class="wrap-mosaic-cover" src="${esc(g.cover)}" alt="${esc(g.title)}" title="${esc(g.title)}${dateTip?' · '+dateTip:''}" onclick="openPanel('${g.id}')" onerror="this.outerHTML='<div class=\\'wrap-mosaic-ph\\' title=\\'${esc(g.title).replace(/'/g,'&#39;')}\\' onclick=\\'openPanel(&quot;${g.id}&quot;)\\'>${esc(g.title).slice(0,18).replace(/'/g,'&#39;')}</div>'">`
               :`<div class="wrap-mosaic-ph" title="${esc(g.title)}${dateTip?' · '+dateTip:''}" onclick="openPanel('${g.id}')">${esc(g.title).slice(0,18)}</div>`;
