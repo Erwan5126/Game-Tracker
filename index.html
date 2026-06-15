@@ -82,6 +82,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 /* Console sub-section */
 .console-section{margin-bottom:16px;margin-left:14px}
 .console-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.console-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px}
+.console-section:hover .console-drag-handle{opacity:.6}
+.console-drag-handle:active{cursor:grabbing}
+.console-section.dragging{opacity:.4}
+.console-list{display:block}
+@media(hover:none){.console-drag-handle{opacity:.5}}
 .console-name{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:-.1px}
 .console-count{font-size:10px;color:var(--text3);font-weight:500}
 
@@ -1008,8 +1014,14 @@ function hierarchyHTML(list){
     const makerTotal=Object.values(consoles).reduce((s,a)=>s+a.length,0);
     const mkKey='m:'+mk;
     const mkCollapsed=collapsedSections.has(mkKey);
-    // Order consoles by MAKERS definition order, unknowns at end
-    const cOrder=[...M.consoles.filter(c=>consoles[c]), ...Object.keys(consoles).filter(c=>!M.consoles.includes(c))];
+    // Order consoles: custom saved order first, then MAKERS definition, unknowns at end
+    const savedOrder=consoleOrder[mk]||[];
+    const present=Object.keys(consoles);
+    const ordered=[];
+    savedOrder.forEach(c=>{ if(consoles[c]&&!ordered.includes(c)) ordered.push(c); });
+    M.consoles.forEach(c=>{ if(consoles[c]&&!ordered.includes(c)) ordered.push(c); });
+    present.forEach(c=>{ if(!ordered.includes(c)) ordered.push(c); });
+    const cOrder=ordered;
     html+=`<div class="maker-section">
       <div class="maker-header collapsible" onclick="toggleSection('${mkKey}')">
         <div class="maker-bar" style="background:${M.color}"></div>
@@ -1018,15 +1030,17 @@ function hierarchyHTML(list){
         <div class="maker-line"></div>
         <span class="collapse-chevron">${mkCollapsed?'▸':'▾'}</span>
       </div>
-      ${mkCollapsed?'':cOrder.map(c=>{
+      ${mkCollapsed?'':`<div class="console-list" data-maker="${mk}">`+cOrder.map(c=>{
         const cKey='c:'+mk+':'+c;
         const cCollapsed=collapsedSections.has(cKey);
         return `
-      <div class="console-section">
-        <div class="console-header collapsible" onclick="toggleSection('${cKey.replace(/'/g,"\\'")}')">
-          <div class="console-name" style="color:${M.color}">${esc(c)}</div>
-          <div class="console-count">· ${consoles[c].length}</div>
-          <span class="collapse-chevron">${cCollapsed?'▸':'▾'}</span>
+      <div class="console-section" draggable="true" data-console="${esc(c)}" data-maker="${mk}"
+           ondragstart="consoleDragStart(event)" ondragover="consoleDragOver(event)" ondrop="consoleDrop(event)" ondragend="consoleDragEnd(event)">
+        <div class="console-header collapsible">
+          <span class="console-drag-handle" title="Glisser pour réordonner">⠿</span>
+          <div class="console-name" style="color:${M.color}" onclick="toggleSection('${cKey.replace(/'/g,"\\'")}')">${esc(c)}</div>
+          <div class="console-count" onclick="toggleSection('${cKey.replace(/'/g,"\\'")}')">· ${consoles[c].length}</div>
+          <span class="collapse-chevron" onclick="toggleSection('${cKey.replace(/'/g,"\\'")}')">${cCollapsed?'▸':'▾'}</span>
         </div>
         ${cCollapsed?'':`<div class="cards-grid">${consoles[c].sort((a,b)=>{
           if(sortMode==='completed'){
@@ -1036,10 +1050,46 @@ function hierarchyHTML(list){
           }
           return (b.release||'0000').localeCompare(a.release||'0000');
         }).map(g=>gameCardHTML(g)).join('')}</div>`}
-      </div>`;}).join('')}
+      </div>`;}).join('')+`</div>`}
     </div>`;
   });
   return html;
+}
+
+// ── Console drag & drop ordering (persisted per maker) ──
+let consoleOrder=(()=>{try{return JSON.parse(localStorage.getItem('gamelog_console_order')||'{}');}catch{return {};}})();
+let dragConsole=null, dragMaker=null;
+function consoleDragStart(e){
+  const sec=e.target.closest('.console-section');
+  dragConsole=sec.dataset.console; dragMaker=sec.dataset.maker;
+  sec.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function consoleDragOver(e){
+  e.preventDefault();
+  const sec=e.target.closest('.console-section');
+  if(!sec||sec.dataset.maker!==dragMaker||sec.dataset.console===dragConsole) return;
+  const list=sec.parentElement;
+  const dragging=list.querySelector('.console-section.dragging');
+  if(!dragging) return;
+  const rect=sec.getBoundingClientRect();
+  const after=e.clientY>rect.top+rect.height/2;
+  if(after) sec.after(dragging); else sec.before(dragging);
+}
+function consoleDrop(e){ e.preventDefault(); }
+function consoleDragEnd(e){
+  const sec=e.target.closest('.console-section');
+  if(sec) sec.classList.remove('dragging');
+  // Save new order from DOM
+  if(dragMaker){
+    const list=document.querySelector(`.console-list[data-maker="${dragMaker}"]`);
+    if(list){
+      const order=[...list.querySelectorAll('.console-section')].map(s=>s.dataset.console);
+      consoleOrder[dragMaker]=order;
+      try{localStorage.setItem('gamelog_console_order',JSON.stringify(consoleOrder));}catch{}
+    }
+  }
+  dragConsole=null; dragMaker=null;
 }
 
 // Collapsed sections (persisted)
