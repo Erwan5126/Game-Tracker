@@ -97,6 +97,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .game-card-bottom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .status-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
 .status-badge.done{background:var(--done-bg);color:var(--done-text)}
+.status-badge.via_remake{background:#F3E8FF;color:#7E22CE}
+[data-theme="dark"] .status-badge.via_remake{background:#2e1a3a;color:#D8B4FE}
 .status-badge.doing{background:var(--doing-bg);color:var(--doing-text)}
 .status-badge.paused{background:#E0E7FF;color:#4338CA}
 [data-theme="dark"] .status-badge.paused{background:#2a2a4a;color:#A5B4FC}
@@ -694,6 +696,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
           <option value="doing">En cours</option>
           <option value="paused">En pause</option>
           <option value="done">Terminé</option>
+          <option value="via_remake">Fait via Remake/Remaster</option>
         </select>
       </div>
       <div class="field">
@@ -788,7 +791,7 @@ const MAKERS = {
   other:     {label:'Tiers / Indé', color:'#6B7280', consoles:['Steam','Epic Games','GOG','Battle.net','PC (autre)','Dreamcast','Saturn','Mega Drive','Game Gear','iOS','Android','PS5','PS4','Switch 2','Switch','Xbox Series X|S','Xbox One','Autre']},
 };
 const MAKER_ORDER = ['sony','nintendo','microsoft','other'];
-const STATUS_LABELS = {todo:'Backlog',doing:'En cours',paused:'En pause',done:'Terminé'};
+const STATUS_LABELS = {todo:'Backlog',doing:'En cours',paused:'En pause',done:'Terminé',via_remake:'Fait via Remake'};
 const OWNERSHIP_LABELS = {owned:'Possédé',wishlist:'Wishlist',gamepass:'Game Pass',borrowed:'Emprunté',played:'Joué'};
 const COMPLETION_LABELS = {not_started:'Pas commencé',main:'Histoire principale',main_extras:'Principal + annexes',hundred:'100%',platinum:'🏆 Platiné / Tous succès',abandoned:'Abandonné'};
 const FORMAT_LABELS = {digital:'Dématérialisé',physical:'Physique',both:'Physique + Digital'};
