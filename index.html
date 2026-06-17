@@ -247,6 +247,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .bar-seg{position:absolute;height:4px;border-radius:3px;pointer-events:auto;cursor:pointer;opacity:.85;transition:opacity .12s}
 .bar-seg:hover{opacity:1}
 .bar-seg.striped{background-image:repeating-linear-gradient(-45deg,transparent,transparent 2px,rgba(255,255,255,.3) 2px,rgba(255,255,255,.3) 4px)}
+.bar-seg.planned{height:5px!important;opacity:.7;box-sizing:border-box;background:transparent}
+.bar-seg.planned:hover{opacity:1}
 .month-bar-legend{margin-top:6px;display:flex;flex-direction:column;gap:2px}
 .month-bar-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:1px 0;min-width:0}
 .month-bar-legend-item:hover .month-bar-legend-name{color:var(--text)}
@@ -755,6 +757,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <button type="button" onclick="addSessionRow()" class="btn-secondary" style="margin-top:6px;font-size:11px;width:100%">＋ Ajouter une période</button>
       <div class="field-hint">Ajoute plusieurs périodes si tu reprends le jeu plus tard</div>
     </div>
+    <div class="field" id="mPlannedField">
+      <label>📅 Période prévue (planning)</label>
+      <div class="fields-2">
+        <input type="date" id="mPlannedStart">
+        <input type="date" id="mPlannedEnd">
+      </div>
+      <div class="field-hint">Quand tu comptes y jouer — apparaît en pointillés sur le calendrier</div>
+    </div>
     <div class="fields-2">
       <div class="field">
         <label>Heures de jeu (total)</label>
@@ -1257,6 +1267,7 @@ function openPanel(id){
   if(g.format) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Format</div><div class="panel-chip-val">${FORMAT_LABELS[g.format]||g.format}</div></div>`;
   if(g.priority) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Priorité</div><div class="panel-chip-val">${PRIORITY_LABELS[g.priority]||g.priority}</div></div>`;
   if(g.estHours) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Durée estimée</div><div class="panel-chip-val">~${g.estHours}h</div></div>`;
+  if((g.status==='todo'||g.status==='paused')&&g.plannedStart) chipsHTML+=`<div class="panel-chip" style="border-style:dashed"><div class="panel-chip-lbl">📅 Prévu</div><div class="panel-chip-val">${fmt(g.plannedStart)}${g.plannedEnd&&g.plannedEnd!==g.plannedStart?' → '+fmt(g.plannedEnd):''}</div></div>`;
   if(g.release) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie</div><div class="panel-chip-val">${fmt(g.release)}</div></div>`;
   if(g.releaseConsole) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Sortie sur</div><div class="panel-chip-val">${esc(g.releaseConsole)}</div></div>`;
   if(g.console) chipsHTML+=`<div class="panel-chip"><div class="panel-chip-lbl">Joué sur</div><div class="panel-chip-val">${esc(g.console)}</div></div>`;
@@ -1390,6 +1401,9 @@ function onModalStatusChange(){
   if((s==='doing'||s==='done')&&!document.querySelectorAll('#mSessions .session-row').length){
     addSessionRow(today(), s==='done'?today():'');
   }
+  // Planned period only relevant for backlog / paused
+  const pf=document.getElementById('mPlannedField');
+  if(pf) pf.style.display=(s==='todo'||s==='paused')?'':'none';
 }
 function addSessionRow(startVal,endVal,hoursVal){
   const container=document.getElementById('mSessions');
@@ -1444,6 +1458,8 @@ function openModal(id, tab){
     document.getElementById('mPriority').value=g.priority||'';
     document.getElementById('mHours').value=g.hours||'';
     document.getElementById('mEstHours').value=g.estHours||'';
+    document.getElementById('mPlannedStart').value=g.plannedStart||'';
+    document.getElementById('mPlannedEnd').value=g.plannedEnd||'';
     getSessions(g).forEach(s=>addSessionRow(s.start,s.end,s.hours));
     modalRating=g.rating||0;
     document.getElementById('modalOverlay').dataset.editId=id;
@@ -1466,6 +1482,8 @@ function openModal(id, tab){
     document.getElementById('mPriority').value='';
     document.getElementById('mHours').value='';
     document.getElementById('mEstHours').value='';
+    document.getElementById('mPlannedStart').value='';
+    document.getElementById('mPlannedEnd').value='';
     delete document.getElementById('modalOverlay').dataset.editId;
   }
   setModalRating(modalRating);
@@ -1516,6 +1534,8 @@ function saveGame(){
     sessions,
     hours:parseFloat(document.getElementById('mHours').value)||0,
     estHours:parseFloat(document.getElementById('mEstHours').value)||0,
+    plannedStart:document.getElementById('mPlannedStart').value||'',
+    plannedEnd:document.getElementById('mPlannedEnd').value||'',
     rating:modalRating,
   };
   const editId=document.getElementById('modalOverlay').dataset.editId;
@@ -1654,6 +1674,12 @@ function renderCalendar(){
         if(!gs) return;
         if(gs<=mEnd && ge>=mStart) results.push({g,s,gs,ge,M});
       });
+      // Planned period (backlog/paused only)
+      if((g.status==='todo'||g.status==='paused')&&g.plannedStart){
+        const gs=g.plannedStart;
+        const ge=g.plannedEnd||g.plannedStart;
+        if(gs<=mEnd && ge>=mStart) results.push({g,s:null,gs,ge,M,planned:true});
+      }
     });
     results.sort((a,b)=>a.gs.localeCompare(b.gs));
     return results;
@@ -1674,13 +1700,11 @@ function renderCalendar(){
   // 7 distinct calendar colors, assigned per game (not per maker)
   const CAL_PALETTE=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#6A4C93','#1D3557'];
 
-  // Compute which months each game appears in
+  // Compute which months each game appears in (sessions + planned)
   const gameMonths={};
   games.forEach(g=>{
     const ms=new Set();
-    getSessions(g).forEach(s=>{
-      const gs=s.start||s.end||'';
-      const ge=s.end||(g.status==='doing'&&!s.end?todayStr:s.start)||'';
+    const addRange=(gs,ge)=>{
       if(!gs) return;
       let cur=new Date(gs+'T12:00:00');
       const end=new Date((ge||gs)+'T12:00:00');
@@ -1688,7 +1712,13 @@ function renderCalendar(){
         ms.add(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`);
         cur.setMonth(cur.getMonth()+1); cur.setDate(1);
       }
+    };
+    getSessions(g).forEach(s=>{
+      const gs=s.start||s.end||'';
+      const ge=s.end||(g.status==='doing'&&!s.end?todayStr:s.start)||'';
+      addRange(gs,ge);
     });
+    if((g.status==='todo'||g.status==='paused')&&g.plannedStart) addRange(g.plannedStart, g.plannedEnd||g.plannedStart);
     gameMonths[g.id]=ms;
   });
   // Greedy color: cycle through palette, skip only if conflict on a shared month
@@ -1735,7 +1765,7 @@ function renderCalendar(){
         const lp=startDow+(d-1);
         const colsLeft=6-(lp%7);
         const segEnd=Math.min(dayE, d+colsLeft);
-        barSegs.push({ds:d, de:segEnd, lane:si, color:barColor, id:x.g.id, title:x.g.title, doing:x.g.status==='doing'&&!x.s.end});
+        barSegs.push({ds:d, de:segEnd, lane:si, color:barColor, id:x.g.id, title:x.g.title+(x.planned?' (prévu)':''), doing:x.s&&x.g.status==='doing'&&!x.s.end, planned:x.planned||false});
         d=segEnd+1;
       }
     });
@@ -1760,9 +1790,10 @@ function renderCalendar(){
       ${monthGames.length?`<div class="month-bar-legend">
         ${monthGames.map(g=>{
           const col=CAL_PALETTE[(gameColorIdx[g.id]||0)%CAL_PALETTE.length];
+          const isPlanned=(g.status==='todo'||g.status==='paused')&&g.plannedStart&&!getSessions(g).length;
           return `<div class="month-bar-legend-item" onclick="openPanel('${g.id}')">
-          <div class="month-bar-legend-dot" style="background:${col}"></div>
-          <div class="month-bar-legend-name">${esc(g.title)}</div>
+          <div class="month-bar-legend-dot" style="${isPlanned?`background:transparent;border:1.5px dashed ${col}`:`background:${col}`}"></div>
+          <div class="month-bar-legend-name">${esc(g.title)}${isPlanned?' (prévu)':''}</div>
         </div>`;}).join('')}
       </div>`:''}
     </div>`;
@@ -1796,7 +1827,7 @@ function positionAllBars(){
       const left=ps.l;
       const width=pe.l+pe.w-ps.l;
       const top=ps.t+ps.h-barH-gap-(b.lane*(barH+gap+1));
-      return `<div class="bar-seg ${b.doing?'striped':''}" style="left:${left}px;top:${top}px;width:${width}px;height:${barH}px;background:${b.color}" onclick="event.stopPropagation();openPanel('${b.id}')" title="${esc(b.title)}"></div>`;
+      return `<div class="bar-seg ${b.doing?'striped':''} ${b.planned?'planned':''}" style="left:${left}px;top:${top}px;width:${width}px;height:${barH}px;background:${b.planned?'transparent':b.color};${b.planned?`border:1.5px dashed ${b.color}`:''}" onclick="event.stopPropagation();openPanel('${b.id}')" title="${esc(b.title)}"></div>`;
     }).join('');
   });
 }
