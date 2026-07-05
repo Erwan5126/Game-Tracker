@@ -283,6 +283,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .cal-chip-val{font-size:20px;font-weight:800;letter-spacing:-1px}
 .cal-chip-lbl{font-size:10px;color:var(--text3);font-weight:500;margin-top:1px}
 .month-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.month-card.cur{scroll-margin-top:96px}
 @media(min-width:560px){.month-grid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:800px){.month-grid{grid-template-columns:repeat(4,1fr)}}
 .month-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;min-width:0;overflow:hidden}
@@ -509,6 +510,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .status-badge{font-size:8.5px; padding:2px 6px}
   .detail-badge,.hours-badge{display:none} /* trop dense pour une grille */
   .star-mini{font-size:9px}
+  .month-card.cur{scroll-margin-top:74px} /* hauteur du header collant + marge */
 }
 </style>
 </head>
