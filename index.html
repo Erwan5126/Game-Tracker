@@ -456,10 +456,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .more-item:active{background:var(--bg3)}
 .more-item span:first-child{width:22px;text-align:center;flex-shrink:0}
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:30;justify-content:space-around}
-.mnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-family:'Inter',sans-serif}
+.mnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 6px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-family:'Inter',sans-serif;flex:1;min-width:0}
 .mnav-item.on{color:var(--text)}
 .mnav-icon{font-size:18px}
-.mnav-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.mnav-label{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap}
 
 @media(max-width:640px){
   .sidebar{display:none}
@@ -578,6 +578,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <button class="mnav-item" data-view="backlog" onclick="switchView('backlog',this)"><span class="mnav-icon">📋</span><span class="mnav-label">Backlog</span></button>
   <button class="mnav-item" data-view="doing" onclick="switchView('doing',this)"><span class="mnav-icon">▶</span><span class="mnav-label">En cours</span></button>
   <button class="mnav-item" data-view="releases" onclick="switchView('releases',this)"><span class="mnav-icon">🗓</span><span class="mnav-label">Sorties</span></button>
+  <button class="mnav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="mnav-icon">📅</span><span class="mnav-label">Sessions</span></button>
   <button class="mnav-item" data-view="stats" onclick="switchView('stats',this)"><span class="mnav-icon">📊</span><span class="mnav-label">Stats</span></button>
   <button class="mnav-item" onclick="openMoreSheet()"><span class="mnav-icon">⋯</span><span class="mnav-label">Plus</span></button>
 </nav>
@@ -587,14 +588,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <div class="panel" style="max-width:430px">
     <div class="panel-drag"></div>
     <div class="more-list">
-      <button class="more-item" onclick="closeMoreSheet();openModal()"><span>➕</span> Ajouter un jeu</button>
-      <button class="more-item" onclick="closeMoreSheet();switchView('calendar')"><span>📅</span> Calendrier des sessions</button>
       <button class="more-item" onclick="closeMoreSheet();switchView('paused')"><span>⏸</span> Jeux en pause</button>
       <button class="more-item" onclick="closeMoreSheet();switchView('done')"><span>✓</span> Jeux terminés</button>
       <button class="more-item" onclick="closeMoreSheet();openSyncModal()"><span>☁️</span> Synchro &amp; réglages</button>
-      <button class="more-item" onclick="closeMoreSheet();exportData()"><span>⬇</span> Exporter mes données</button>
-      <button class="more-item" onclick="closeMoreSheet();document.getElementById('importFile').click()"><span>⬆</span> Importer un fichier</button>
-      <button class="more-item" onclick="toggleTheme()"><span>🌓</span> Basculer clair / sombre</button>
     </div>
   </div>
 </div>
