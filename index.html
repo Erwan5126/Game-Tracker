@@ -476,6 +476,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .cards-grid{grid-template-columns:1fr}
   .console-section{margin-left:8px}
 }
+/* ── Mobile : bibliothèque dégraissée ── */
+@media(max-width:640px){
+  .filter-bar{
+    flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    margin:-14px -16px 14px; padding:12px 16px 10px;
+  }
+  .filter-bar::-webkit-scrollbar{display:none}
+  .filter-chip{font-size:11.5px; padding:6px 12px; flex-shrink:0}
+  .game-card{padding:11px 12px; gap:11px; border-left-width:3px !important}
+  .game-cover,.game-cover-ph{width:58px; height:78px}
+  .game-card-title{font-size:14.5px; white-space:normal; line-height:1.25}
+  .game-card-meta{font-size:10.5px; gap:6px; margin-bottom:5px}
+  .game-card-bottom{gap:6px}
+}
 </style>
 </head>
 <body>
@@ -575,25 +591,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <!-- MOBILE NAV -->
 <nav class="mobile-nav">
   <button class="mnav-item on" data-view="library" onclick="switchView('library',this)"><span class="mnav-icon">🎮</span><span class="mnav-label">Jeux</span></button>
-  <button class="mnav-item" data-view="backlog" onclick="switchView('backlog',this)"><span class="mnav-icon">📋</span><span class="mnav-label">Backlog</span></button>
-  <button class="mnav-item" data-view="doing" onclick="switchView('doing',this)"><span class="mnav-icon">▶</span><span class="mnav-label">En cours</span></button>
   <button class="mnav-item" data-view="releases" onclick="switchView('releases',this)"><span class="mnav-icon">🗓</span><span class="mnav-label">Sorties</span></button>
   <button class="mnav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="mnav-icon">📅</span><span class="mnav-label">Sessions</span></button>
   <button class="mnav-item" data-view="stats" onclick="switchView('stats',this)"><span class="mnav-icon">📊</span><span class="mnav-label">Stats</span></button>
-  <button class="mnav-item" onclick="openMoreSheet()"><span class="mnav-icon">⋯</span><span class="mnav-label">Plus</span></button>
+  <button class="mnav-item" onclick="openSyncModal()"><span class="mnav-icon">☁️</span><span class="mnav-label">Réglages</span></button>
 </nav>
-
-<!-- MENU PLUS (mobile) : tout ce qui vivait dans la sidebar -->
-<div class="overlay" id="moreOverlay" onclick="if(event.target===this)closeMoreSheet()">
-  <div class="panel" style="max-width:430px">
-    <div class="panel-drag"></div>
-    <div class="more-list">
-      <button class="more-item" onclick="closeMoreSheet();switchView('paused')"><span>⏸</span> Jeux en pause</button>
-      <button class="more-item" onclick="closeMoreSheet();switchView('done')"><span>✓</span> Jeux terminés</button>
-      <button class="more-item" onclick="closeMoreSheet();openSyncModal()"><span>☁️</span> Synchro &amp; réglages</button>
-    </div>
-  </div>
-</div>
 
 <div class="tooltip" id="tooltip"></div>
 
@@ -1406,9 +1408,12 @@ function emptyHTML(title,sub){
 }
 
 function gameCardHTML(g){
-  let stars='<div class="stars-mini">';
-  for(let i=1;i<=5;i++) stars+=`<span class="star-mini ${i<=(g.rating||0)?'on':''}">★</span>`;
-  stars+='</div>';
+  let stars='';
+  if((g.rating||0)>0){
+    stars='<div class="stars-mini">';
+    for(let i=1;i<=5;i++) stars+=`<span class="star-mini ${i<=(g.rating||0)?'on':''}">★</span>`;
+    stars+='</div>';
+  }
   return `<div class="game-card" onclick="openPanel('${g.id}')" style="border-left:4px solid ${makerOf(g).color}">
     ${g.completion==='platinum'?'<div class="stamp stamp-card platinum">🏆</div>':g.completion==='hundred'?'<div class="stamp stamp-card hundred">100%</div>':''}
     ${g.cover?`<img class="game-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=game-cover-ph>🎮</div>'">`:`<div class="game-cover-ph">🎮</div>`}
@@ -1421,7 +1426,7 @@ function gameCardHTML(g){
       ${g.genre?`<span>${esc(g.genre)}</span>`:''}
     </div>
     <div class="game-card-bottom">
-      <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+      ${(currentView==='library'||currentView==='releases')?`<span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>`:''}
       ${g.status==='todo'&&g.priority?`<span class="detail-badge priority-${g.priority}">${g.priority==='high'?'🔥 ':''}${PRIORITY_LABELS[g.priority]}</span>`:''}
       ${g.parentId?`<span class="detail-badge dlc">DLC</span>`:''}
       ${g.edition?`<span class="detail-badge edition">${EDITION_LABELS[g.edition]||g.edition}</span>`:''}
@@ -1768,10 +1773,6 @@ function saveGame(){
   else { data.id='g'+Date.now(); data.created=today(); delete deletedMap[data.id]; games.unshift(data); }
   save(); closeModal(); renderCurrent();
 }
-
-// ─── MENU PLUS (mobile) ───
-function openMoreSheet(){ document.getElementById('moreOverlay').classList.add('on'); }
-function closeMoreSheet(){ document.getElementById('moreOverlay').classList.remove('on'); }
 
 // ─── RAWG (recherche & remplissage auto) ───
 const RAWG_LS='gamelog_rawg';
