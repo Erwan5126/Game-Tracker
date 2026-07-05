@@ -941,7 +941,7 @@ let games = (() => {
     return [];
   }catch{ return []; }
 })();
-let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
+let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=String(new Date().getFullYear());
 
 function save(){
   try{ localStorage.setItem(LS,JSON.stringify(games)); }
@@ -1161,6 +1161,13 @@ function switchView(v,btn){
   document.getElementById('mainTitle').textContent=VIEW_TITLES[v]||v;
   document.getElementById('searchWrap').style.display=['library','backlog','doing','paused','done'].includes(v)?'':'none';
   renderCurrent();
+  // Calendrier : amener directement le mois en cours à l'écran
+  if(v==='calendar'&&calYear===new Date().getFullYear()){
+    requestAnimationFrame(()=>{
+      const cur=document.querySelector('.month-card.cur');
+      if(cur) cur.scrollIntoView({block:'start',behavior:'auto'});
+    });
+  }
 }
 function renderCurrent(){
   if(currentView==='library') renderLibrary();
