@@ -853,21 +853,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div class="field-hint">Crée un token sur github.com/settings/tokens (Fine-grained ou classic) avec la permission <strong>gist</strong> uniquement. Il reste stocké sur cet appareil.</div>
     </div>
     <div class="field">
-      <label>ID du Gist (optionnel)</label>
-      <input type="text" id="syncGistId" placeholder="Laisse vide pour en créer un nouveau">
-      <div class="field-hint">Pour lier un autre appareil au même gist, colle l'ID affiché sur ton premier appareil.</div>
-    </div>
-    <div class="field">
       <label>Clé API RAWG (recherche de jeux)</label>
       <input type="password" id="rawgKeyInput" placeholder="Clé gratuite sur rawg.io/apidocs" autocomplete="off">
       <div class="field-hint">Active la recherche et le remplissage auto des fiches : jaquette, date de sortie, genres, studio, plateformes.</div>
     </div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0;cursor:pointer">
-      <input type="checkbox" id="syncAuto" style="width:auto"> Sync automatique à chaque changement
-    </label>
+    <div class="field-hint" style="margin:10px 0 6px">La sauvegarde est <strong>entièrement automatique</strong> : gist créé/retrouvé tout seul, envoi à chaque changement, fusion entre appareils sans écrasement. Le bouton ci-dessous force juste une synchro immédiate.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-      <button class="btn-primary" style="flex:1;min-width:120px" onclick="syncPush(true)">☁️↑ Envoyer</button>
-      <button class="btn-secondary" style="flex:1;min-width:120px" onclick="syncPull(true)">☁️↓ Récupérer</button>
+      <button class="btn-secondary" style="flex:1;min-width:160px" onclick="syncPull(true)">↻ Synchroniser maintenant</button>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="disconnectSync()" style="color:#DC2626">Déconnecter</button>
@@ -1006,19 +998,19 @@ function saveSyncCfg(){ try{localStorage.setItem(SYNC_CFG,JSON.stringify(syncCfg
 function updateSyncBtn(){
   const btn=document.getElementById('syncBtn');
   if(!btn) return;
-  btn.textContent=syncCfg.token?(syncCfg.auto?'☁️ Sync auto activée':'☁️ Synchro GitHub'):'☁️ Synchro GitHub';
+  btn.textContent=syncCfg.token?'☁️ Sauvegarde auto ✓':'☁️ Synchro GitHub';
 }
 function scheduleAutoSync(){
-  if(!syncCfg.token||syncCfg.auto===false) return;
+  if(!syncCfg.token) return;
   clearTimeout(autoSyncTimer);
   autoSyncTimer=setTimeout(()=>{ syncPush(false); }, 2500);
 }
 function openSyncModal(){
   document.getElementById('syncToken').value=syncCfg.token||'';
-  document.getElementById('syncGistId').value=syncCfg.gistId||'';
   document.getElementById('rawgKeyInput').value=rawgKey||'';
-  document.getElementById('syncAuto').checked=syncCfg.auto!==false&&!!syncCfg.token;
-  setSyncStatus(syncCfg.token?(syncCfg.gistId?`✅ Connecté · Gist ${syncCfg.gistId.slice(0,8)}…${syncCfg.lastSync?' · dernière sync '+syncCfg.lastSync:''}`:'Token prêt — envoie tes données pour créer le gist.'):'Non connecté. Colle un token GitHub pour commencer.');
+  setSyncStatus(syncCfg.token
+    ? `✅ Sauvegarde automatique active${syncCfg.lastSync?' · dernière sync '+syncCfg.lastSync:''}`
+    : 'Non connecté. Colle un token GitHub (permission « gist ») pour activer la sauvegarde automatique.');
   document.getElementById('syncOverlay').classList.add('on');
 }
 function closeSyncModal(){ document.getElementById('syncOverlay').classList.remove('on'); }
@@ -1031,13 +1023,13 @@ function setSyncStatus(msg,isErr){
 }
 function saveSyncSettings(){
   const token=document.getElementById('syncToken').value.trim();
-  const gistId=document.getElementById('syncGistId').value.trim();
-  const auto=document.getElementById('syncAuto').checked;
-  syncCfg.token=token; syncCfg.gistId=gistId; syncCfg.auto=auto;
+  if(token!==syncCfg.token){ syncCfg.gistId=''; } // nouveau token → on relocalise le gist
+  syncCfg.token=token;
+  delete syncCfg.auto; // la synchro est toujours automatique désormais
   saveSyncCfg(); updateSyncBtn();
   rawgKey=document.getElementById('rawgKeyInput').value.trim();
   try{ localStorage.setItem(RAWG_LS, rawgKey); }catch{}
-  if(token){ syncPull(true); } // crée le gist automatiquement si besoin, puis fusionne
+  if(token){ syncPull(true); } // trouve/crée le gist, fusionne, renvoie
   else { setSyncStatus('Non connecté.'); }
 }
 function disconnectSync(){
@@ -1045,8 +1037,6 @@ function disconnectSync(){
   syncCfg={}; saveSyncCfg(); updateSyncBtn();
   setSyncStatus('Déconnecté.');
   document.getElementById('syncToken').value='';
-  document.getElementById('syncGistId').value='';
-  document.getElementById('syncAuto').checked=false;
 }
 async function syncPush(manual){
   if(!syncCfg.token){ if(manual) setSyncStatus('Ajoute un token GitHub d\'abord.',true); return; }
@@ -1061,7 +1051,7 @@ async function syncPush(manual){
     if(!res.ok){ throw new Error('HTTP '+res.status); }
     syncCfg.lastSync=new Date().toLocaleString('fr-FR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
     saveSyncCfg(); updateSyncBtn();
-    if(manual){ setSyncStatus(`✅ Envoyé · Gist ${syncCfg.gistId.slice(0,8)}… · ${syncCfg.lastSync}`); document.getElementById('syncGistId').value=syncCfg.gistId; }
+    if(manual){ setSyncStatus(`✅ Envoyé · ${syncCfg.lastSync}`); }
   }catch(e){
     if(manual) setSyncStatus('❌ Échec de l\'envoi : '+e.message+' (token valide ? permission gist ?)',true);
   }finally{
@@ -2657,6 +2647,8 @@ function toggleTheme(){
 
 // ─── RAPPEL DE SAUVEGARDE ───
 function checkBackupReminder(){
+  if(syncCfg.token) return; // sauvegarde automatique active : plus besoin de rappel
+
   const el=document.getElementById('backupBanner');
   if(!el) return;
   if(games.length<5){ el.style.display='none'; return; }
@@ -2690,17 +2682,17 @@ if('serviceWorker' in navigator){
 }
 
 // Synchro au démarrage (fusion, jamais d'écrasement)
-if(syncCfg.token&&syncCfg.auto!==false){
+if(syncCfg.token){
   syncPull(false).catch(()=>{});
 }
 // Mobile : envoi immédiat quand l'app passe en arrière-plan, récupération au retour
 document.addEventListener('visibilitychange',()=>{
-  if(!syncCfg.token||syncCfg.auto===false) return;
+  if(!syncCfg.token) return;
   if(document.visibilityState==='hidden'){ clearTimeout(autoSyncTimer); syncPush(false); }
   else{ syncPull(false).catch(()=>{}); }
 });
 window.addEventListener('focus',()=>{
-  if(syncCfg.token&&syncCfg.auto!==false) syncPull(false).catch(()=>{});
+  if(syncCfg.token) syncPull(false).catch(()=>{});
 });
 </script>
 </body>
