@@ -863,8 +863,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <!-- SYNC MODAL -->
 <div class="modal-overlay" id="syncOverlay" onclick="handleOverlayClick(event,'syncOverlay')">
   <div class="modal">
-    <div class="modal-title">☁️ Synchro & réglages <span style="font-size:11px;color:var(--text3);font-weight:500">v2.2</span></div>
+    <div class="modal-title">☁️ Synchro & réglages <span style="font-size:11px;color:var(--text3);font-weight:500">v2.3</span></div>
     <div id="syncStatus" style="font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;background:var(--bg3);color:var(--text2)"></div>
+    <div id="syncGistLink" class="field-hint" style="margin:-8px 0 12px"></div>
     <div class="field">
       <label>Token GitHub (personnel)</label>
       <input type="password" id="syncToken" placeholder="ghp_..." autocomplete="off">
@@ -1035,6 +1036,9 @@ function scheduleAutoSync(){
 function openSyncModal(){
   document.getElementById('syncToken').value=syncCfg.token||'';
   document.getElementById('rawgKeyInput').value=rawgKey||'';
+  document.getElementById('syncGistLink').innerHTML=syncCfg.gistId
+    ? `Cet appareil utilise le gist <a href="https://gist.github.com/${syncCfg.gistId}" target="_blank" rel="noopener" style="font-family:monospace">${syncCfg.gistId.slice(0,10)}…</a> ↗`
+    : '';
   setSyncStatus(syncCfg.token
     ? `✅ Sauvegarde automatique active${syncCfg.lastSync?' · dernière sync '+syncCfg.lastSync:''}`
     : 'Non connecté. Colle un token GitHub (permission « gist ») pour activer la sauvegarde automatique.');
@@ -1069,6 +1073,7 @@ function resetLocalData(){
   if(!syncCfg.token){ setSyncStatus('Connecte d\'abord un token GitHub.',true); return; }
   if(!confirm('Effacer les jeux stockés sur cet appareil et tout re-télécharger depuis le gist ?')) return;
   games=[]; deletedMap={};
+  syncCfg.gistId=''; saveSyncCfg(); // on re-localisera le bon gist
   try{
     localStorage.removeItem(LS);
     localStorage.removeItem('gamelog_updated');
