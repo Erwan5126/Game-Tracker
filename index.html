@@ -962,7 +962,7 @@ let deletedMap=(()=>{try{return JSON.parse(localStorage.getItem('gamelog_deleted
 let pushQueued=false;
 function saveDeleted(){ try{localStorage.setItem('gamelog_deleted',JSON.stringify(deletedMap));}catch{} }
 function localUpdatedAt(){ return parseInt(localStorage.getItem('gamelog_updated')||'0',10)||0; }
-function buildPayload(){ return JSON.stringify({updatedAt:localUpdatedAt()||Date.now(), games, deleted:deletedMap}, null, 1); }
+function buildPayload(){ return JSON.stringify({updatedAt:localUpdatedAt()||0, games, deleted:deletedMap}, null, 1); }
 function parseRemote(content){
   const d=JSON.parse(content);
   if(Array.isArray(d)) return {updatedAt:0, games:d, deleted:{}}; // ancien format (tableau nu)
@@ -1063,8 +1063,14 @@ function disconnectSync(){
   setSyncStatus('Déconnecté.');
   document.getElementById('syncToken').value='';
 }
+function hasSyncedOnce(){ try{return localStorage.getItem('gamelog_synced_once')==='1';}catch{return false;} }
+function markSyncedOnce(){ try{localStorage.setItem('gamelog_synced_once','1');}catch{} }
 async function syncPush(manual){
   if(!syncCfg.token){ if(manual) setSyncStatus('Ajoute un token GitHub d\'abord.',true); return; }
+  // GARDE-FOU : ce navigateur n'a encore jamais fusionné avec le gist
+  // (stockage neuf, icône réinstallée…) → on tire+fusionne d'abord, jamais
+  // d'écrasement du gist par un appareil vide.
+  if(!hasSyncedOnce()){ return syncPull(manual); }
   if(syncing){ pushQueued=true; return; }
   syncing=true;
   if(manual) setSyncStatus('Envoi en cours…');
@@ -1101,6 +1107,7 @@ async function syncPull(manual){
       remote=parseRemote(content);
     }
     mergeSync(remote);            // aucune donnée écrasée : fusion des deux côtés
+    markSyncedOnce();
     renderCurrent(); updateBadges();
     syncCfg.lastSync=new Date().toLocaleString('fr-FR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
     saveSyncCfg(); updateSyncBtn();
