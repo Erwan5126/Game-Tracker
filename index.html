@@ -970,11 +970,18 @@ function parseRemote(content){
 }
 function mergeSync(remote){
   // Union par id ; en cas de conflit, le jeu modifié le plus récemment gagne.
+  // Égalité (jeux sans horodatage individuel, ex. antérieurs à la v2) :
+  // c'est le CÔTÉ globalement le plus récent qui l'emporte.
+  const localGloballyNewer = (localUpdatedAt()||0) > (remote.updatedAt||0);
   const byId=new Map();
   for(const g of remote.games) byId.set(g.id, g);
   for(const g of games){
     const r=byId.get(g.id);
-    if(!r || (g.updatedAt||0) >= (r.updatedAt||0)) byId.set(g.id, g);
+    if(!r){ byId.set(g.id, g); continue; }
+    const gu=g.updatedAt||0, ru=r.updatedAt||0;
+    if(gu>ru) byId.set(g.id, g);
+    else if(gu===ru && localGloballyNewer) byId.set(g.id, g);
+    // sinon : la version distante (déjà dans la map) reste
   }
   // Tombstones : une suppression volontaire gagne, sauf ré-ajout postérieur.
   const del={...remote.deleted};
@@ -1564,7 +1571,7 @@ let promptRating=false;
 function setPanelStatus(s){
   const g=games.find(x=>x.id===panelId); if(!g) return;
   if(!g.sessions) g.sessions=[];
-  g.status=s;
+  g.status=s; g.updatedAt=Date.now();
   if(s==='doing'){
     // If no open session, start one
     if(!hasOpenSession(g)) g.sessions.push({start:today(),end:''});
@@ -1586,13 +1593,13 @@ function setPanelStatus(s){
 function resumeGame(id){
   const g=games.find(x=>x.id===id); if(!g) return;
   if(!g.sessions) g.sessions=[];
-  g.status='doing';
+  g.status='doing'; g.updatedAt=Date.now();
   g.sessions.push({start:today(),end:''});
   save(); openPanel(id); renderCurrent();
 }
 function setPanelRating(r){
   const g=games.find(x=>x.id===panelId); if(!g) return;
-  g.rating=g.rating===r?0:r;
+  g.rating=g.rating===r?0:r; g.updatedAt=Date.now();
   save();
   for(let i=1;i<=5;i++) document.getElementById('pst'+i).className='pstar'+(i<=(g.rating||0)?' on':'');
   if(promptRating&&g.rating){ promptRating=false; const b=document.getElementById('ratingPromptBanner'); if(b) b.remove(); }
