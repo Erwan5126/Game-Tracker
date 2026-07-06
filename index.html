@@ -863,7 +863,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 <!-- SYNC MODAL -->
 <div class="modal-overlay" id="syncOverlay" onclick="handleOverlayClick(event,'syncOverlay')">
   <div class="modal">
-    <div class="modal-title">☁️ Synchro & réglages</div>
+    <div class="modal-title">☁️ Synchro & réglages <span style="font-size:11px;color:var(--text3);font-weight:500">v2.2</span></div>
     <div id="syncStatus" style="font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;background:var(--bg3);color:var(--text2)"></div>
     <div class="field">
       <label>Token GitHub (personnel)</label>
@@ -878,7 +878,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <div class="field-hint" style="margin:10px 0 6px">La sauvegarde est <strong>entièrement automatique</strong> : gist créé/retrouvé tout seul, envoi à chaque changement, fusion entre appareils sans écrasement. Le bouton ci-dessous force juste une synchro immédiate.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
       <button class="btn-secondary" style="flex:1;min-width:160px" onclick="syncPull(true)">↻ Synchroniser maintenant</button>
+      <button class="btn-secondary" style="flex:1;min-width:160px;color:var(--danger,#d33)" onclick="resetLocalData()">⟲ Réinitialiser cet appareil</button>
     </div>
+    <div class="field-hint" style="margin-top:6px">« Réinitialiser » efface les jeux stockés sur CET appareil (tes clés sont conservées) puis re-télécharge tout depuis le gist. À utiliser si un appareil affiche des données incohérentes.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="disconnectSync()" style="color:#DC2626">Déconnecter</button>
       <button class="btn-primary" onclick="saveSyncSettings()">Enregistrer</button>
@@ -1062,6 +1064,19 @@ function disconnectSync(){
   syncCfg={}; saveSyncCfg(); updateSyncBtn();
   setSyncStatus('Déconnecté.');
   document.getElementById('syncToken').value='';
+}
+function resetLocalData(){
+  if(!syncCfg.token){ setSyncStatus('Connecte d\'abord un token GitHub.',true); return; }
+  if(!confirm('Effacer les jeux stockés sur cet appareil et tout re-télécharger depuis le gist ?')) return;
+  games=[]; deletedMap={};
+  try{
+    localStorage.removeItem(LS);
+    localStorage.removeItem('gamelog_updated');
+    localStorage.removeItem('gamelog_deleted');
+    localStorage.removeItem('gamelog_synced_once');
+  }catch{}
+  setSyncStatus('Appareil réinitialisé — récupération du gist…');
+  syncPull(true);
 }
 function hasSyncedOnce(){ try{return localStorage.getItem('gamelog_synced_once')==='1';}catch{return false;} }
 function markSyncedOnce(){ try{localStorage.setItem('gamelog_synced_once','1');}catch{} }
