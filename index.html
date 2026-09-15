@@ -1054,7 +1054,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.3.1';
+const APP_VERSION='v2.3.2';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1524,12 +1524,14 @@ function makerOfConsole(consoleName){
   // Une liste de plateformes n'est pas une console : jeu multiplateforme → tiers
   if(/[,;]/.test(consoleName)) return 'other';
   const cl=consoleName.toLowerCase().trim();
+  // Correspondance exacte avec nos listes internes
   for(const mk of ['sony','nintendo','microsoft']){
     if(MAKERS[mk].consoles.some(c=>c.toLowerCase()===cl)) return mk;
   }
-  if(/^ps\d|^playstation|^psp$|^ps vita$/.test(cl)) return 'sony';
-  if(/^switch|^wii|^gamecube|^n64|^nes$|^snes$|^3ds$|^game boy|^gba$|^ds$|^nintendo/.test(cl)) return 'nintendo';
-  if(/^xbox/.test(cl)) return 'microsoft';
+  // Mots-clés (couvre les noms complets utilisés par IGDB)
+  if(/xbox/.test(cl)) return 'microsoft';
+  if(/playstation|^ps\d|^ps$|^psp$|ps vita|psvita|^ps one$/.test(cl)) return 'sony';
+  if(/nintendo|famicom|family computer|game boy|gameboy|advance|\bwii\b|switch|^nes$|^snes$|super nes|^n64$|gamecube|game cube|^3ds$|^ds$|^dsi$|virtual boy|game & watch|^gba$|^gbc$/.test(cl)) return 'nintendo';
   return 'other';
 }
 // Constructeur de classement : console jouée > constructeur du jeu
