@@ -622,6 +622,25 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .stamp-card{width:22px;height:22px;font-size:7px;top:4px;right:4px}
   .stamp-card.platinum{font-size:10px}
 
+  /* Jeux du mois : cartes sous le calendrier */
+  .month-bar-legend{display:none}                     /* remplacée par les cartes */
+  .month-games{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .month-games-title{font-size:10.5px;font-weight:700;color:var(--text3);
+    text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+  .mgame{display:flex;align-items:center;gap:10px;background:var(--bg2);
+    border:1px solid var(--border);border-radius:10px;padding:8px 10px 8px 0;
+    overflow:hidden;cursor:pointer}
+  .mgame:active{background:var(--bg3)}
+  .mgame-bar{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+  .mgame-cover{width:38px;height:51px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+  .mgame-cover-ph{width:38px;height:51px;border-radius:5px;flex-shrink:0;background:var(--bg3);
+    display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--border2)}
+  .mgame-info{flex:1;min-width:0}
+  .mgame-title{font-size:12.5px;font-weight:700;line-height:1.3;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mgame-meta{font-size:10px;color:var(--text3);margin-top:2px}
+  .mgame-badges{display:flex;gap:5px;align-items:center;margin-top:4px;flex-wrap:wrap}
+
   /* Calendrier : un mois à l'écran, navigation par balayage */
   .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
   .month-nav-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
@@ -1166,7 +1185,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.8-mobile';
+const APP_VERSION='v2.9-mobile';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -2915,7 +2934,35 @@ function renderCalendar(){
           <div class="month-bar-legend-name">${esc(g.title)}${isPlanned?' (prévu)':''}</div>
         </div>`;}).join('')}
       </div>`:''}
-    </div>`;
+    </div>
+    ${mobileCal&&monthGames.length?`<div class="month-games">
+      <div class="month-games-title">${monthGames.length} jeu${monthGames.length>1?'x':''} ce mois-ci</div>
+      ${monthGames.map(g=>{
+        const col=CAL_PALETTE[(gameColorIdx[g.id]||0)%CAL_PALETTE.length];
+        const isPlanned=(g.status==='todo'||g.status==='paused')&&g.plannedStart&&!getSessions(g).length;
+        // Période couverte par ce jeu dans le mois affiché
+        const segs=monthSessions.filter(x=>x.g.id===g.id);
+        let periods='';
+        if(segs.length){
+          const lo=segs.reduce((a,x)=>x.gs<a?x.gs:a, segs[0].gs);
+          const hi=segs.reduce((a,x)=>x.ge>a?x.ge:a, segs[0].ge);
+          periods = lo===hi ? fmt(lo) : `${fmt(lo)} → ${fmt(hi)}`;
+        }
+        const h=totalHours(g);
+        return `<div class="mgame" onclick="openPanel('${g.id}')" style="--mg-accent:${col}">
+          <div class="mgame-bar" style="${isPlanned?`background:repeating-linear-gradient(180deg,${col} 0 4px,transparent 4px 8px)`:`background:${col}`}"></div>
+          ${g.cover?`<img class="mgame-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=mgame-cover-ph>🎮</div>'">`:`<div class="mgame-cover-ph">🎮</div>`}
+          <div class="mgame-info">
+            <div class="mgame-title">${esc(g.title)}</div>
+            <div class="mgame-meta">${isPlanned?'📅 Prévu · ':''}${periods}</div>
+            <div class="mgame-badges">
+              <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
+              ${h?`<span class="hours-badge">🕒 ${h}h</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`:''}`;
   }
   html+=`</div>`;
   document.getElementById('calContent').innerHTML=html;
