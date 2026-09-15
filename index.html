@@ -1054,7 +1054,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.3.2';
+const APP_VERSION='v2.4';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1519,6 +1519,22 @@ function setSortMode(m,btn){
 
 // ─── HIERARCHICAL RENDER (maker -> console -> cards) ───
 // Deduce maker from console name (for library grouping by played-on console)
+// Plateformes neutres : elles n'appartiennent à aucun constructeur de console
+function isNeutralPlatform(p){
+  return /^(pc|mac|linux|arcade|steam|web|browser|ios|android|dos|amiga|atari|commodore|msx|zx |sharp|fm |pc-|3do|ouya|stadia|google)/i.test(String(p||'').trim());
+}
+// Constructeur dominant d'une liste de plateformes
+// Un jeu marqué "Abandonné" n'est pas considéré comme terminé dans les stats
+function isCompleted(g){ return g.status==='done' && g.completion!=='abandoned'; }
+function isAbandoned(g){ return g.completion==='abandoned'; }
+function makerOfPlatformList(platforms){
+  if(!platforms||!platforms.length) return null;
+  const consoleOnly=platforms.filter(p=>!isNeutralPlatform(p));
+  const pool=consoleOnly.length?consoleOnly:platforms;
+  const makers=[...new Set(pool.map(makerOfConsole))].filter(m=>m!=='other');
+  if(makers.length===1) return makers[0];   // exclusivité d'un constructeur
+  return 'other';                            // multiplateforme → tiers
+}
 function makerOfConsole(consoleName){
   if(!consoleName) return 'other';
   // Une liste de plateformes n'est pas une console : jeu multiplateforme → tiers
@@ -1820,7 +1836,7 @@ function openPanel(id){
   // Franchise chip with progression
   if(g.franchise){
     const fGames=games.filter(x=>x.franchise===g.franchise&&!x.parentId);
-    const fDone=fGames.filter(x=>x.status==='done').length;
+    const fDone=fGames.filter(isCompleted).length;
     chipsHTML+=`<div class="panel-chip" style="cursor:pointer;border-color:var(--accent)" onclick="closePanel();switchView('library',document.querySelector('[data-view=library]'));document.getElementById('searchInput').value='${esc(g.franchise).replace(/'/g,"\\'")}';updateSearchClear();renderCurrent()"><div class="panel-chip-lbl">Franchise</div><div class="panel-chip-val">📚 ${esc(g.franchise)} · ${fDone}/${fGames.length} terminé${fDone>1?'s':''}</div></div>`;
   }
   // DLC: link to parent game
@@ -2216,16 +2232,8 @@ function applyPlatforms(platforms){
   const rcEl=document.getElementById('mReleaseConsole');
   const mkEl=document.getElementById('mMaker');
   if(!platforms||!platforms.length){ renderPlatformChips(); return; }
-  const makers=[...new Set(platforms.map(makerOfConsole))];
-  if(makers.length===1 && makers[0]!=='other'){
-    // Exclusivité : une ou plusieurs consoles d'un même constructeur
-    if(rcEl) rcEl.value=platforms.join(', ');
-    if(mkEl) mkEl.value=makers[0];
-  } else {
-    // Multiplateforme → jeu tiers
-    if(rcEl) rcEl.value=platforms.join(', ');
-    if(mkEl) mkEl.value='other';
-  }
+  if(rcEl) rcEl.value=platforms.join(', ');
+  if(mkEl) mkEl.value=makerOfPlatformList(platforms)||'other';
   renderPlatformChips();
 }
 // Puces : choisir sur quelle console TU y joues (détermine le classement)
@@ -2327,20 +2335,8 @@ async function startBulkIgdb(){
         if(d.franchise) g.franchise=d.franchise;
         if(d.platforms.length){
           g.platforms=d.platforms.slice();
-          if(d.platforms.length===1){
-            g.releaseConsole=d.platforms[0];
-            const mk=makerOfConsole(d.platforms[0]);
-            if(mk) g.maker=mk;
-          } else {
-            const makers=[...new Set(d.platforms.map(makerOfConsole))];
-            if(makers.length===1 && makers[0]!=='other'){
-              g.releaseConsole=d.platforms.join(', ');
-              g.maker=makers[0];
-            } else {
-              g.releaseConsole='Multi';
-              g.maker='other';
-            }
-          }
+          g.releaseConsole=d.platforms.join(', ');
+          g.maker=makerOfPlatformList(d.platforms)||'other';
         }
         g.updated=Date.now();
         updated++;
@@ -2526,7 +2522,7 @@ function renderCalendar(){
     });
   });
   const activeDays=Object.keys(dayMap).length;
-  const yearDone=games.filter(g=>g.status==='done'&&getSessions(g).some(s=>(s.end||'').startsWith(y))).length;
+  const yearDone=games.filter(g=>isCompleted(g)&&getSessions(g).some(s=>(s.end||'').startsWith(y))).length;
   const yearHours=games.reduce((sum,g)=>sum+hoursInYear(g,y),0);
 
   // For each month: find sessions (not games) that overlap
@@ -2754,7 +2750,8 @@ function renderStats(){
   // Filter games by year
   const fg=games.filter(g=>gameActiveInYear(g, sy));
   const total=fg.length;
-  const done=fg.filter(g=>g.status==='done').length;
+  const done=fg.filter(isCompleted).length;
+  const abandoned=fg.filter(g=>g.status==='done'&&isAbandoned(g)).length;
   const doing=fg.filter(g=>g.status==='doing').length;
   const backlog=fg.filter(g=>g.status==='todo').length;
   const hoursOf=g=>sy?hoursInYear(g,sy):totalHours(g);
@@ -2778,7 +2775,7 @@ function renderStats(){
   // Most played (max 5)
   const topPlayed=[...fg].filter(g=>hoursOf(g)).sort((a,b)=>hoursOf(b)-hoursOf(a)).slice(0,5);
   // Recent completions (max 5)
-  const recentDone=[...fg].filter(g=>g.status==='done').sort((a,b)=>{
+  const recentDone=[...fg].filter(isCompleted).sort((a,b)=>{
     const da=lastSession(a), db=lastSession(b);
     return (db?.end||'').localeCompare(da?.end||'');
   }).slice(0,5);
@@ -2839,9 +2836,9 @@ function renderStats(){
     // Game of the period: most hours
     const goty=topPlayed[0]||null;
     // Coup de cœur: best rated completed in period
-    const fav=[...fg].filter(g=>g.rating>=4&&g.status==='done').sort((a,b)=>b.rating-a.rating||hoursOf(b)-hoursOf(a))[0]||null;
+    const fav=[...fg].filter(g=>g.rating>=4&&isCompleted(g)).sort((a,b)=>b.rating-a.rating||hoursOf(b)-hoursOf(a))[0]||null;
     // Completions in period
-    const doneInPeriod=sy?fg.filter(g=>g.status==='done'&&getSessions(g).some(s=>(s.end||'').startsWith(sy))).length:done;
+    const doneInPeriod=sy?fg.filter(g=>isCompleted(g)&&getSessions(g).some(s=>(s.end||'').startsWith(sy))).length:done;
     // Dominant genre
     const topGenre=genresSorted.length?genresSorted[0]:null;
     // Dominant platform (played-on console)
@@ -3085,6 +3082,11 @@ function renderStats(){
           <div class="stat-mini-lbl">Backlog</div>
           <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?backlog/total*100:0}%;background:var(--border2)"></div></div>
         </div>
+        ${abandoned?`<div class="stat-mini">
+          <div class="stat-mini-val" style="color:#B45309">${abandoned}</div>
+          <div class="stat-mini-lbl">Abandonnés</div>
+          <div class="stat-mini-bar"><div class="stat-mini-bar-fill" style="width:${total?abandoned/total*100:0}%;background:#B45309"></div></div>
+        </div>`:''}
       </div>
     </div>
   </div>
@@ -3104,7 +3106,7 @@ function renderStats(){
   ${(()=>{
     // Franchises progression
     const frMap={};
-    fg.forEach(g=>{ if(g.franchise&&!g.parentId){ if(!frMap[g.franchise]) frMap[g.franchise]={total:0,done:0,hours:0}; frMap[g.franchise].total++; if(g.status==='done') frMap[g.franchise].done++; frMap[g.franchise].hours+=hoursOf(g); } });
+    fg.forEach(g=>{ if(g.franchise&&!g.parentId){ if(!frMap[g.franchise]) frMap[g.franchise]={total:0,done:0,hours:0}; frMap[g.franchise].total++; if(isCompleted(g)) frMap[g.franchise].done++; frMap[g.franchise].hours+=hoursOf(g); } });
     const frSorted=Object.entries(frMap).filter(([,v])=>v.total>1).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
     if(!frSorted.length) return '';
     return `<div class="section-title">Franchises</div>
