@@ -94,11 +94,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .maker-section{margin-bottom:32px}
 .maker-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .maker-header.collapsible,.console-header.collapsible{cursor:pointer;user-select:none}
-.maker-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px}
+.maker-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;padding:6px 4px;margin:-6px -2px -6px -4px}
 .maker-section:hover>.maker-header .maker-drag-handle{opacity:.6}
 .maker-drag-handle:active{cursor:grabbing}
-.maker-section.dragging{opacity:.4}
-@media(hover:none){.maker-drag-handle{opacity:.5}}
+.maker-section.dragging{opacity:.5;background:var(--bg3);border-radius:8px}
+.console-section.dragging{opacity:.5;background:var(--bg3);border-radius:8px}
+@media(hover:none){.maker-drag-handle{opacity:.55;font-size:15px}}
 .maker-header.collapsible:hover .maker-name,.console-header.collapsible:hover .console-name{opacity:.7}
 .collapse-chevron{font-size:11px;color:var(--text3);flex-shrink:0;margin-left:4px}
 .maker-bar{width:4px;height:22px;border-radius:2px;flex-shrink:0}
@@ -109,12 +110,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 /* Console sub-section */
 .console-section{margin-bottom:16px;margin-left:14px}
 .console-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.console-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px}
+.console-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;padding:6px 4px;margin:-6px -2px -6px -4px}
 .console-section:hover .console-drag-handle{opacity:.6}
 .console-drag-handle:active{cursor:grabbing}
 .console-section.dragging{opacity:.4}
 .console-list{display:block}
-@media(hover:none){.console-drag-handle{opacity:.5}}
+@media(hover:none){.console-drag-handle{opacity:.55;font-size:15px}}
 .console-name{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:-.1px}
 .console-count{font-size:10px;color:var(--text3);font-weight:500}
 
@@ -165,6 +166,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .empty-title{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:4px}
 .empty-sub{font-size:12px;line-height:1.6}
 .empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
+
+/* ── PANNEAU "PLUS" (mobile) ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:260;display:none;align-items:flex-end;justify-content:center}
+.sheet-overlay.on{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--bg2);border-radius:18px 18px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:sheetUp .22s ease}
+@keyframes sheetUp{from{transform:translateY(22px);opacity:.5}to{transform:translateY(0);opacity:1}}
+.sheet-grip{width:38px;height:4px;border-radius:3px;background:var(--border2);margin:2px auto 12px;opacity:.6}
+.sheet-title{font-size:17px;font-weight:800;letter-spacing:-.5px;margin-bottom:14px}
+.sheet-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 6px}
+.sheet-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border:none;background:var(--bg3);border-radius:10px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text);cursor:pointer;margin-bottom:6px;text-align:left}
+.sheet-item:active{background:var(--border)}
+.sheet-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.sheet-badge{margin-left:auto;font-size:11px;font-weight:700;color:var(--text3);background:var(--bg2);padding:2px 8px;border-radius:10px}
+.sheet-close{width:100%;padding:13px;margin-top:16px;border:1px solid var(--border);background:transparent;border-radius:10px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text2);cursor:pointer}
+
+@media(min-width:641px){ .sheet-overlay{display:none!important} }
 
 /* ── INFO CARD (lecture seule) ── */
 .info-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
@@ -545,11 +562,47 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .cal-header{flex-direction:column;align-items:stretch}
   .cal-year-btns{margin-left:0}
   .mobile-nav{display:flex}
-  .theme-toggle-mobile{display:flex}
-  .main-header{padding:14px 16px 12px}
+  .theme-toggle-mobile{display:none}
+  .main-header{padding:12px 14px 10px;flex-wrap:wrap;gap:8px}
   .main-content{padding:14px 16px;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
   .cards-grid{grid-template-columns:1fr}
   .console-section{margin-left:8px}
+
+  /* Formulaires : une colonne, champs confortables au doigt */
+  .fields-2{grid-template-columns:1fr;gap:10px}
+  .field input,.field select,.field textarea{font-size:16px;padding:11px 12px}
+  .session-row{flex-wrap:wrap}
+  .session-row input{flex:1 1 42%;font-size:15px;padding:9px 10px}
+
+  /* Titre + recherche sur toute la largeur */
+  .main-title{font-size:19px;flex:1 1 auto}
+  .search-wrap{order:3;flex:1 1 100%;max-width:none}
+  .search-wrap input{font-size:16px;padding:10px 30px 10px 34px}
+
+  /* Barres de filtres : défilement horizontal au lieu du retour à la ligne */
+  .filter-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding-bottom:4px;margin-left:-16px;margin-right:-16px;
+    padding-left:16px;padding-right:16px}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .filter-chip{flex-shrink:0;padding:7px 14px;font-size:12.5px}
+
+  /* Cibles tactiles plus généreuses */
+  .nav-badge,.console-count{font-size:11px}
+  .maker-name{font-size:15px}
+  .console-name{font-size:13px}
+  .game-card{padding:14px}
+  .btn-primary,.btn-secondary,.btn-doing,.btn-danger{padding:11px 14px;font-size:13px}
+  .panel-actions button{flex:1 1 calc(50% - 4px)}
+
+  /* Récap annuel : lisible sur écran étroit */
+  .wrap-hero{padding:22px 18px}
+  .wrap-hero-big{font-size:40px}
+  .wrap-card{min-height:96px;padding:15px 14px}
+  .wrap-card-cover{width:52px;height:70px;right:-6px}
+  .stats-hero{gap:14px}
+  .stats-hero-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .wrap-mosaic{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
+  .info-row-label{width:74px}
 }
 </style>
 </head>
@@ -716,10 +769,33 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   <button class="mnav-item on" data-view="library" onclick="switchView('library',this)"><span class="mnav-icon">🎮</span><span class="mnav-label">Jeux</span></button>
   <button class="mnav-item" data-view="backlog" onclick="switchView('backlog',this)"><span class="mnav-icon">📋</span><span class="mnav-label">Backlog</span></button>
   <button class="mnav-item" data-view="doing" onclick="switchView('doing',this)"><span class="mnav-icon">▶</span><span class="mnav-label">En cours</span></button>
-  <button class="mnav-item" data-view="releases" onclick="switchView('releases',this)"><span class="mnav-icon">🗓</span><span class="mnav-label">Sorties</span></button>
   <button class="mnav-item" data-view="calendar" onclick="switchView('calendar',this)"><span class="mnav-icon">📅</span><span class="mnav-label">Calendrier</span></button>
   <button class="mnav-item" data-view="stats" onclick="switchView('stats',this)"><span class="mnav-icon">📊</span><span class="mnav-label">Stats</span></button>
+  <button class="mnav-item" id="mnavMore" onclick="openMoreSheet()"><span class="mnav-icon">☰</span><span class="mnav-label">Plus</span></button>
 </nav>
+
+<!-- PANNEAU "PLUS" (mobile) -->
+<div class="sheet-overlay" id="moreOverlay" onclick="handleOverlayClick(event,'moreOverlay')">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <div class="sheet-title">Menu</div>
+
+    <div class="sheet-label">Bibliothèque</div>
+    <button class="sheet-item" onclick="goView('paused')"><span class="sheet-ico">⏸</span> En pause <span class="sheet-badge" id="sheetBadgePaused">0</span></button>
+    <button class="sheet-item" onclick="goView('done')"><span class="sheet-ico">✓</span> Terminés <span class="sheet-badge" id="sheetBadgeDone">0</span></button>
+    <button class="sheet-item" onclick="goView('releases')"><span class="sheet-ico">🗓</span> Sorties <span class="sheet-badge" id="sheetBadgeReleases">0</span></button>
+
+    <div class="sheet-label">Données</div>
+    <button class="sheet-item" onclick="closeMoreSheet();openSyncModal()"><span class="sheet-ico">☁️</span> <span id="sheetSyncLabel">Synchro cloud</span></button>
+    <button class="sheet-item" onclick="closeMoreSheet();exportData()"><span class="sheet-ico">↓</span> Exporter mes données</button>
+    <button class="sheet-item" onclick="closeMoreSheet();document.getElementById('importFile').click()"><span class="sheet-ico">↑</span> Importer un fichier</button>
+
+    <div class="sheet-label">Affichage</div>
+    <button class="sheet-item" onclick="toggleTheme()"><span class="sheet-ico" id="sheetThemeIco">🌙</span> <span id="sheetThemeLabel">Mode sombre</span></button>
+
+    <button class="sheet-close" onclick="closeMoreSheet()">Fermer</button>
+  </div>
+</div>
 
 <div class="tooltip" id="tooltip"></div>
 
@@ -1059,7 +1135,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.5';
+const APP_VERSION='v2.6-mobile';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1460,6 +1536,8 @@ function switchView(v,btn){
   document.getElementById('view-'+v).classList.add('on');
   document.querySelectorAll('[data-view]').forEach(el=>el.classList.remove('on'));
   document.querySelectorAll('[data-view="'+v+'"]').forEach(el=>el.classList.add('on'));
+  const moreBtn=document.getElementById('mnavMore');
+  if(moreBtn) moreBtn.classList.toggle('on', ['paused','done','releases'].includes(v));
   document.getElementById('mainTitle').textContent=VIEW_TITLES[v]||v;
   document.getElementById('searchWrap').style.display=['library','backlog','doing','paused','done'].includes(v)?'':'none';
   renderCurrent();
@@ -1635,6 +1713,68 @@ function hierarchyHTML(list){
   html+='</div>';
   return html;
 }
+
+// ── Glisser-déposer tactile (mobile) ──
+// Les événements HTML5 "drag" n'existent pas au toucher : on gère nous-mêmes.
+(function(){
+  let touchEl=null, touchList=null, touchKind=null, startY=0, moved=false;
+
+  function onTouchStart(e){
+    const handle=e.target.closest('.maker-drag-handle,.console-drag-handle');
+    if(!handle) return;
+    const isMaker=handle.classList.contains('maker-drag-handle');
+    const sec=handle.closest(isMaker?'.maker-section':'.console-section');
+    if(!sec) return;
+    e.preventDefault();          // bloque la sélection de texte et le scroll
+    touchEl=sec; touchKind=isMaker?'maker':'console';
+    touchList=sec.parentElement;
+    startY=e.touches[0].clientY; moved=false;
+    sec.classList.add('dragging');
+    if(navigator.vibrate) navigator.vibrate(12);
+  }
+
+  function onTouchMove(e){
+    if(!touchEl) return;
+    e.preventDefault();
+    const y=e.touches[0].clientY;
+    if(Math.abs(y-startY)>4) moved=true;
+    const sel=touchKind==='maker'?'.maker-section':'.console-section';
+    // Élément survolé par le doigt
+    const under=document.elementFromPoint(e.touches[0].clientX, y);
+    if(!under) return;
+    const target=under.closest(sel);
+    if(!target||target===touchEl||target.parentElement!==touchList) return;
+    const r=target.getBoundingClientRect();
+    if(y>r.top+r.height/2) target.after(touchEl); else target.before(touchEl);
+  }
+
+  function onTouchEnd(){
+    if(!touchEl) return;
+    touchEl.classList.remove('dragging');
+    if(moved){
+      if(touchKind==='maker'){
+        const list=document.querySelector('.maker-list');
+        if(list){
+          makerOrder=[...list.querySelectorAll('.maker-section')].map(s=>s.dataset.makersec).filter(Boolean);
+          try{localStorage.setItem('gamelog_maker_order',JSON.stringify(makerOrder));}catch{}
+        }
+      } else {
+        const mk=touchEl.dataset.maker;
+        const list=document.querySelector(`.console-list[data-maker="${mk}"]`);
+        if(list){
+          consoleOrder[mk]=[...list.querySelectorAll('.console-section')].map(s=>s.dataset.console).filter(Boolean);
+          try{localStorage.setItem('gamelog_console_order',JSON.stringify(consoleOrder));}catch{}
+        }
+      }
+    }
+    touchEl=null; touchList=null; touchKind=null; moved=false;
+  }
+
+  document.addEventListener('touchstart', onTouchStart, {passive:false});
+  document.addEventListener('touchmove',  onTouchMove,  {passive:false});
+  document.addEventListener('touchend',   onTouchEnd);
+  document.addEventListener('touchcancel',onTouchEnd);
+})();
 
 // ── Réordonnancement des constructeurs (glisser-déposer, persistant) ──
 let makerOrder=(()=>{try{return JSON.parse(localStorage.getItem('gamelog_maker_order')||'[]');}catch{return [];}})();
@@ -2419,6 +2559,26 @@ async function startBulkIgdb(){
   if(stop) stop.style.display='none';
   showToast(`✨ ${updated} jeu${updated>1?'x':''} mis à jour${renamed?` · ${renamed} renommé${renamed>1?'s':''}`:''}${missed?` · ${missed} sans résultat`:''}`, null, 7000);
   updateBulkIgdbStats();
+}
+
+// ─── PANNEAU "PLUS" (mobile) ───
+function openMoreSheet(){
+  // Synchronise les compteurs et libellés avant affichage
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+  set('sheetBadgePaused', games.filter(g=>g.status==='paused').length);
+  set('sheetBadgeDone', games.filter(g=>g.status==='done').length);
+  const todayStr=today();
+  set('sheetBadgeReleases', games.filter(g=>g.release&&g.release>=todayStr).length);
+  set('sheetSyncLabel', fbUser?'Synchro cloud — connecté':'Synchro cloud');
+  const dark=document.documentElement.getAttribute('data-theme')==='dark';
+  set('sheetThemeIco', dark?'☀️':'🌙');
+  set('sheetThemeLabel', dark?'Mode clair':'Mode sombre');
+  document.getElementById('moreOverlay').classList.add('on');
+}
+function closeMoreSheet(){ document.getElementById('moreOverlay').classList.remove('on'); }
+function goView(v){
+  closeMoreSheet();
+  switchView(v, document.querySelector('[data-view="'+v+'"]'));
 }
 
 function previewCover(){ renderInfoCard(); }
@@ -3258,6 +3418,7 @@ function handleOverlayClick(e,id){
     else if(id==='modalOverlay') closeModal();
     else if(id==='dayOverlay') closeDayPopup();
     else if(id==='syncOverlay') closeSyncModal();
+    else if(id==='moreOverlay') closeMoreSheet();
   }
 }
 (function(){
@@ -3272,7 +3433,7 @@ function handleOverlayClick(e,id){
 document.addEventListener('keydown',e=>{
   const typing=e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT';
   if(!typing){
-    if(e.key==='Escape'){ closePanel(); closeModal(); closeDayPopup(); closeSyncModal(); }
+    if(e.key==='Escape'){ closePanel(); closeModal(); closeDayPopup(); closeSyncModal(); closeMoreSheet(); }
     if(e.key==='n'||e.key==='N') openModal(null);
     if(e.key==='f'||e.key==='F'){ e.preventDefault(); document.getElementById('searchInput').focus(); }
   }
@@ -3290,6 +3451,10 @@ function toggleTheme(){
   const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
   try{ localStorage.setItem('gamelog_theme',t); }catch{}
   applyTheme(t);
+  // Met à jour le libellé dans le panneau "Plus" s'il est ouvert
+  const ico=document.getElementById('sheetThemeIco'), lbl=document.getElementById('sheetThemeLabel');
+  if(ico) ico.textContent = t==='dark'?'☀️':'🌙';
+  if(lbl) lbl.textContent = t==='dark'?'Mode clair':'Mode sombre';
 }
 (function(){
   let t='light';
