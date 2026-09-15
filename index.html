@@ -161,6 +161,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .empty-sub{font-size:12px;line-height:1.6}
 .empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
 
+/* ── INFO CARD (lecture seule) ── */
+.info-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+.info-empty{font-size:12px;color:var(--text3);text-align:center;padding:16px 8px;line-height:1.5}
+.info-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.info-cover{width:62px;height:83px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg2);box-shadow:var(--shadow)}
+.info-head-txt{flex:1;min-width:0;padding-top:2px}
+.info-title{font-size:15px;font-weight:800;letter-spacing:-.4px;line-height:1.25}
+.info-sub{font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.5}
+.info-rows{display:flex;flex-direction:column;gap:7px}
+.info-row{display:flex;gap:10px;font-size:12px;align-items:baseline}
+.info-row-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;width:88px}
+.info-row-val{flex:1;min-width:0;font-weight:600;line-height:1.4}
+.info-plat-block{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
 /* ── PLATFORM CHIPS ── */
 .plat-chips{margin:-6px 0 16px;display:flex;flex-wrap:wrap;gap:5px}
 .plat-label{width:100%;font-size:10.5px;color:var(--text3);margin-bottom:3px;line-height:1.4}
@@ -765,59 +779,46 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <div class="field" id="igdbSearchField">
       <label>🔍 Rechercher un jeu</label>
       <div style="position:relative">
-        <input type="text" id="igdbQuery" placeholder="Tape un titre pour remplir automatiquement..." autocomplete="off" oninput="onIgdbInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchIGDB();}">
+        <input type="text" id="igdbQuery" placeholder="Tape un titre..." autocomplete="off" oninput="onIgdbInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchIGDB();}">
         <button type="button" class="igdb-clear" id="igdbClear" onclick="clearIgdb()" style="display:none">✕</button>
       </div>
       <div id="igdbResults" class="igdb-results" style="display:none"></div>
-      <div class="field-hint" id="igdbHint">Remplit jaquette, date de sortie, studio, genre et franchise.</div>
+      <div class="field-hint" id="igdbHint">Les informations du jeu proviennent d'IGDB.</div>
     </div>
-    <div class="field">
-      <label>Titre *</label>
-      <input type="text" id="mTitle" placeholder="Nom du jeu...">
-    </div>
-    <div class="field">
-      <label>Jaquette (URL image)</label>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <input type="text" id="mCover" placeholder="https://..." style="flex:1" oninput="previewCover()">
-        <img id="mCoverPreview" src="" style="width:40px;height:53px;border-radius:4px;object-fit:cover;background:var(--bg3);display:none;flex-shrink:0">
-      </div>
-      <div class="field-hint">Colle l'URL d'une image de jaquette (Google Images, IGDB, etc.)</div>
-    </div>
-    <div class="fields-2">
-      <div class="field">
-        <label>Constructeur / Éditeur</label>
-        <select id="mMaker" onchange="populateConsoles()"></select>
-        <div class="field-hint">First-party ou Tiers / Indé</div>
-      </div>
-      <div class="field">
-        <label>Console de sortie</label>
-        <input type="text" id="mReleaseConsole" list="consoleList" placeholder="Ex: PS5, Multi...">
-        <div class="field-hint">Plateforme d'origine du jeu</div>
+
+    <!-- Fiche consultable (non modifiable) -->
+    <div id="gameInfoCard" class="info-card">
+      <div class="info-empty" id="infoEmpty">Recherche un jeu ci-dessus pour remplir sa fiche.</div>
+      <div id="infoFilled" style="display:none">
+        <div class="info-head">
+          <img id="infoCover" class="info-cover" src="" alt="" onerror="this.style.visibility='hidden'">
+          <div class="info-head-txt">
+            <div class="info-title" id="infoTitle"></div>
+            <div class="info-sub" id="infoSub"></div>
+          </div>
+        </div>
+        <div class="info-rows" id="infoRows"></div>
+        <div class="info-plat-block" id="infoPlatBlock" style="display:none">
+          <div class="info-row-label">Disponible sur</div>
+          <div class="plat-chips" id="platformChips"></div>
+        </div>
       </div>
     </div>
-    <div id="platformChips" class="plat-chips" style="display:none"></div>
-    <div class="fields-2">
-      <div class="field">
-        <label>Studio / Éditeur</label>
-        <input type="text" id="mStudio" list="studioList" placeholder="Optionnel">
-        <datalist id="studioList"></datalist>
-      </div>
-      <div class="field">
-        <label>Date de sortie</label>
-        <input type="date" id="mRelease">
-      </div>
-    </div>
-    <div class="field">
-      <label>Genre</label>
-      <input type="text" id="mGenre" list="genreList" placeholder="RPG, FPS...">
-      <datalist id="genreList"></datalist>
-    </div>
-    <div class="field">
-      <label>Franchise / Saga</label>
-      <input type="text" id="mFranchise" list="franchiseList" placeholder="Ex: Zelda, Pokémon, Fire Emblem...">
-      <datalist id="franchiseList"></datalist>
-      <div class="field-hint">Pour regrouper les jeux d'une même série</div>
-    </div>
+
+    <!-- Valeurs réelles, pilotées par IGDB -->
+    <input type="hidden" id="mTitle">
+    <input type="hidden" id="mCover">
+    <input type="hidden" id="mMaker">
+    <input type="hidden" id="mReleaseConsole">
+    <input type="hidden" id="mStudio">
+    <input type="hidden" id="mRelease">
+    <input type="hidden" id="mGenre">
+    <input type="hidden" id="mFranchise">
+    <img id="mCoverPreview" src="" style="display:none">
+    <datalist id="studioList"></datalist>
+    <datalist id="genreList"></datalist>
+    <datalist id="franchiseList"></datalist>
+
     <div class="field">
       <label>Édition / Type</label>
       <select id="mEdition">
@@ -842,7 +843,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
     <div id="modalTabTracking" style="display:none">
     <div class="field">
       <label>Joué sur (console)</label>
-      <input type="text" id="mConsole" list="consoleList" placeholder="Ex: PS5, Switch 2, Steam...">
+      <input type="text" id="mConsole" list="consoleList" placeholder="Ex: PS5, Switch 2, Steam..." oninput="renderPlatformChips()">
       <datalist id="consoleList"></datalist>
       <div class="field-hint">La console/plateforme sur laquelle TU y joues</div>
     </div>
@@ -1053,7 +1054,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.2';
+const APP_VERSION='v2.3';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1911,17 +1912,20 @@ function undoDelete(){
 
 // ─── MODAL ───
 function populateMakers(){
-  document.getElementById('mMaker').innerHTML = MAKER_ORDER.map(m=>`<option value="${m}">${MAKERS[m].label}</option>`).join('');
+  // mMaker est désormais un champ caché piloté par IGDB — rien à peupler.
 }
 function populateConsoles(selectedConsole){
-  const mk=document.getElementById('mMaker').value;
-  // Maker's consoles first, then all others, then custom used ones
-  const makerConsoles=MAKERS[mk]?.consoles||[];
+  const mk=((document.getElementById('mMaker')||{}).value)||'other';
+  const makerConsoles=(MAKERS[mk]&&MAKERS[mk].consoles)||[];
   const allKnown=MAKER_ORDER.flatMap(m=>MAKERS[m].consoles);
   const used=[...new Set(games.flatMap(g=>[g.console,g.releaseConsole]).filter(Boolean))];
   const all=[...new Set([...makerConsoles,...allKnown,...used])];
-  document.getElementById('consoleList').innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');
-  if(selectedConsole!==undefined) document.getElementById('mConsole').value=selectedConsole||'';
+  const dl=document.getElementById('consoleList');
+  if(dl) dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');
+  if(selectedConsole!==undefined){
+    const el=document.getElementById('mConsole');
+    if(el) el.value=selectedConsole||'';
+  }
 }
 function populateSuggestions(){
   const genres=[...new Set(games.flatMap(g=>g.genre?g.genre.split(',').map(s=>s.trim()).filter(Boolean):[]))].sort();
@@ -2055,7 +2059,7 @@ function openModal(id, tab){
       if(qEl) qEl.placeholder='Tape un titre pour remplir automatiquement...';
     }
   }
-  renderPlatformChips();
+  renderInfoCard();
   switchModalTab(tab||'game');
   closePanel();
   document.getElementById('modalOverlay').classList.add('on');
@@ -2166,42 +2170,75 @@ function applyIgdb(i){
   if(d.genres.length) setIf('mGenre', d.genres.slice(0,2).join(', '));
   setIf('mFranchise', d.franchise);
   applyPlatforms(d.platforms);
+  renderInfoCard();
   clearIgdb();
-  showToast('✅ Infos récupérées depuis IGDB', null, 2500);
+  showToast('✅ Fiche remplie depuis IGDB', null, 2500);
 }
 
-// Plateformes : un jeu multiplateforme n'appartient à aucun constructeur
+// ─── FICHE INFOS (lecture seule, alimentée par IGDB) ───
+function renderInfoCard(){
+  const v=id=>((document.getElementById(id)||{}).value||'').trim();
+  const title=v('mTitle');
+  const empty=document.getElementById('infoEmpty'), filled=document.getElementById('infoFilled');
+  if(!empty||!filled) return;
+  if(!title){ empty.style.display=''; filled.style.display='none'; return; }
+  empty.style.display='none'; filled.style.display='';
+
+  const cover=v('mCover');
+  const cv=document.getElementById('infoCover');
+  if(cover){ cv.src=cover; cv.style.visibility='visible'; cv.style.display=''; }
+  else { cv.style.display='none'; }
+
+  document.getElementById('infoTitle').textContent=title;
+  const mk=v('mMaker'), rel=v('mRelease');
+  const sub=[rel?fmt(rel):'', MAKERS[mk]?MAKERS[mk].label:''].filter(Boolean).join(' · ');
+  document.getElementById('infoSub').textContent=sub;
+
+  const rows=[
+    ['Studio', v('mStudio')],
+    ['Genre', v('mGenre')],
+    ['Franchise', v('mFranchise')],
+    ['Sortie sur', v('mReleaseConsole')],
+  ].filter(r=>r[1]);
+  document.getElementById('infoRows').innerHTML=rows.map(r=>
+    `<div class="info-row"><div class="info-row-label">${r[0]}</div><div class="info-row-val">${esc(r[1])}</div></div>`
+  ).join('');
+
+  renderPlatformChips();
+}
+
+// Plateformes : liste complète ; le constructeur découle de l'ensemble
 function applyPlatforms(platforms){
   igdbPlatforms=platforms||[];
   const rcEl=document.getElementById('mReleaseConsole');
   const mkEl=document.getElementById('mMaker');
   if(!platforms||!platforms.length){ renderPlatformChips(); return; }
-  if(platforms.length===1){
-    if(rcEl) rcEl.value=platforms[0];
-    const mk=makerOfConsole(platforms[0]);
-    if(mkEl&&mk) mkEl.value=mk;
+  const makers=[...new Set(platforms.map(makerOfConsole))];
+  if(makers.length===1 && makers[0]!=='other'){
+    // Exclusivité : une ou plusieurs consoles d'un même constructeur
+    if(rcEl) rcEl.value=platforms.join(', ');
+    if(mkEl) mkEl.value=makers[0];
   } else {
-    // Exclusivité ? Toutes les plateformes appartiennent au même constructeur
-    const makers=[...new Set(platforms.map(makerOfConsole))];
-    if(makers.length===1 && makers[0]!=='other'){
-      if(rcEl) rcEl.value=platforms.join(', ');
-      if(mkEl) mkEl.value=makers[0];
-    } else {
-      if(rcEl) rcEl.value='Multi';
-      if(mkEl) mkEl.value='other'; // Tiers / Indé
-    }
+    // Multiplateforme → jeu tiers
+    if(rcEl) rcEl.value=platforms.join(', ');
+    if(mkEl) mkEl.value='other';
   }
   renderPlatformChips();
 }
-// Puces cliquables : choisir sur quelle console TU y joues
+// Puces : choisir sur quelle console TU y joues (détermine le classement)
 function renderPlatformChips(){
   const box=document.getElementById('platformChips');
+  const block=document.getElementById('infoPlatBlock');
   if(!box) return;
-  if(!igdbPlatforms.length){ box.style.display='none'; box.innerHTML=''; return; }
-  const current=(document.getElementById('mConsole')||{}).value||'';
-  box.style.display='';
-  box.innerHTML=`<div class="plat-label">Disponible sur — touche la console sur laquelle tu y joues :</div>`
-    + igdbPlatforms.map(p=>`<button type="button" class="plat-chip${p===current?' on':''}" onclick="pickPlayedOn('${esc(p).replace(/'/g,"\\'")}')">${esc(p)}</button>`).join('');
+  if(!igdbPlatforms.length){
+    if(block) block.style.display='none';
+    box.innerHTML=''; return;
+  }
+  if(block) block.style.display='';
+  const current=((document.getElementById('mConsole')||{}).value||'').trim();
+  box.innerHTML=igdbPlatforms.map(p=>
+    `<button type="button" class="plat-chip${p===current?' on':''}" onclick="pickPlayedOn(${JSON.stringify(p).replace(/"/g,'&quot;')})">${esc(p)}</button>`
+  ).join('');
 }
 function pickPlayedOn(p){
   const el=document.getElementById('mConsole');
@@ -2332,15 +2369,15 @@ async function startBulkIgdb(){
   updateBulkIgdbStats();
 }
 
-function previewCover(){
-  const url=document.getElementById('mCover').value.trim();
-  const img=document.getElementById('mCoverPreview');
-  if(url){ img.src=url; img.style.display='block'; img.onerror=function(){this.style.display='none';}; }
-  else { img.style.display='none'; }
-}
+function previewCover(){ renderInfoCard(); }
 function saveGame(){
   const title=document.getElementById('mTitle').value.trim();
-  if(!title){ document.getElementById('mTitle').focus(); return; }
+  if(!title){
+    switchModalTab('game');
+    showToast('Cherche d\'abord le jeu sur IGDB pour remplir sa fiche.', null, 4000);
+    const q=document.getElementById('igdbQuery'); if(q) q.focus();
+    return;
+  }
   const status=document.getElementById('mStatus').value;
   const sessions=status==='todo'?[]:getModalSessions();
   const data={
