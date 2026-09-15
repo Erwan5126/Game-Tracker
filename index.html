@@ -161,6 +161,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .empty-sub{font-size:12px;line-height:1.6}
 .empty-cta{margin-top:16px;padding:8px 18px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
 
+/* ── PLATFORM CHIPS ── */
+.plat-chips{margin:-6px 0 16px;display:flex;flex-wrap:wrap;gap:5px}
+.plat-label{width:100%;font-size:10.5px;color:var(--text3);margin-bottom:3px;line-height:1.4}
+.plat-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s}
+.plat-chip:hover{border-color:var(--border2);color:var(--text)}
+.plat-chip.on{background:var(--text);color:var(--bg2);border-color:var(--text)}
+
 /* ── IGDB SEARCH ── */
 .igdb-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:none;background:var(--border);color:var(--text2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .igdb-clear:hover{background:var(--border2)}
@@ -788,6 +795,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
         <div class="field-hint">Plateforme d'origine du jeu</div>
       </div>
     </div>
+    <div id="platformChips" class="plat-chips" style="display:none"></div>
     <div class="fields-2">
       <div class="field">
         <label>Studio / Éditeur</label>
@@ -1045,7 +1053,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.1-refresh';
+const APP_VERSION='v2.2';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1982,6 +1990,7 @@ function openModal(id, tab){
     document.getElementById('mMaker').value=g.maker||'other';
     populateConsoles(g.console);
     document.getElementById('mReleaseConsole').value=g.releaseConsole||'';
+    igdbPlatforms=Array.isArray(g.platforms)?g.platforms.slice():[];
     document.getElementById('mStatus').value=g.status||'todo';
     document.getElementById('mStudio').value=g.studio||'';
     document.getElementById('mRelease').value=g.release||'';
@@ -2006,6 +2015,7 @@ function openModal(id, tab){
     document.getElementById('mMaker').value='other';
     populateConsoles('');
     document.getElementById('mReleaseConsole').value='';
+    igdbPlatforms=[];
     document.getElementById('mStatus').value='todo';
     document.getElementById('mStudio').value='';
     document.getElementById('mRelease').value='';
@@ -2045,6 +2055,7 @@ function openModal(id, tab){
       if(qEl) qEl.placeholder='Tape un titre pour remplir automatiquement...';
     }
   }
+  renderPlatformChips();
   switchModalTab(tab||'game');
   closePanel();
   document.getElementById('modalOverlay').classList.add('on');
@@ -2057,7 +2068,7 @@ function setModalRating(r){
 }
 // ─── RECHERCHE IGDB (via relais Cloudflare) ───
 const IGDB_RELAY='https://withered-sun-9f78.erwanwagner.workers.dev';
-let igdbTimer=null, igdbLastQuery='', igdbSeq=0, igdbFillMode='replace';
+let igdbTimer=null, igdbLastQuery='', igdbSeq=0, igdbFillMode='replace', igdbPlatforms=[];
 
 function onIgdbInput(){
   const q=document.getElementById('igdbQuery').value.trim();
@@ -2147,7 +2158,6 @@ function applyIgdb(i){
   const d=window._igdbCache&&window._igdbCache[i];
   if(!d) return;
   // Ne touche QUE les champs de l'onglet "Infos du jeu".
-  // Le suivi (statut, sessions, heures, note, possession…) est dans l'autre onglet, intact.
   const setIf=(id,val)=>{ const el=document.getElementById(id); if(el&&val) el.value=val; };
   setIf('mTitle', d.name);
   if(d.coverId){ document.getElementById('mCover').value=igdbCoverUrl(d.coverId,'cover_big'); previewCover(); }
@@ -2155,14 +2165,49 @@ function applyIgdb(i){
   setIf('mStudio', d.studio);
   if(d.genres.length) setIf('mGenre', d.genres.slice(0,2).join(', '));
   setIf('mFranchise', d.franchise);
-  if(d.platforms.length){
-    setIf('mReleaseConsole', d.platforms[0]);
-    const mk=makerOfConsole(d.platforms[0]);
-    const mEl=document.getElementById('mMaker');
-    if(mEl&&mk) mEl.value=mk;
-  }
+  applyPlatforms(d.platforms);
   clearIgdb();
   showToast('✅ Infos récupérées depuis IGDB', null, 2500);
+}
+
+// Plateformes : un jeu multiplateforme n'appartient à aucun constructeur
+function applyPlatforms(platforms){
+  igdbPlatforms=platforms||[];
+  const rcEl=document.getElementById('mReleaseConsole');
+  const mkEl=document.getElementById('mMaker');
+  if(!platforms||!platforms.length){ renderPlatformChips(); return; }
+  if(platforms.length===1){
+    if(rcEl) rcEl.value=platforms[0];
+    const mk=makerOfConsole(platforms[0]);
+    if(mkEl&&mk) mkEl.value=mk;
+  } else {
+    // Exclusivité ? Toutes les plateformes appartiennent au même constructeur
+    const makers=[...new Set(platforms.map(makerOfConsole))];
+    if(makers.length===1 && makers[0]!=='other'){
+      if(rcEl) rcEl.value=platforms.join(', ');
+      if(mkEl) mkEl.value=makers[0];
+    } else {
+      if(rcEl) rcEl.value='Multi';
+      if(mkEl) mkEl.value='other'; // Tiers / Indé
+    }
+  }
+  renderPlatformChips();
+}
+// Puces cliquables : choisir sur quelle console TU y joues
+function renderPlatformChips(){
+  const box=document.getElementById('platformChips');
+  if(!box) return;
+  if(!igdbPlatforms.length){ box.style.display='none'; box.innerHTML=''; return; }
+  const current=(document.getElementById('mConsole')||{}).value||'';
+  box.style.display='';
+  box.innerHTML=`<div class="plat-label">Disponible sur — touche la console sur laquelle tu y joues :</div>`
+    + igdbPlatforms.map(p=>`<button type="button" class="plat-chip${p===current?' on':''}" onclick="pickPlayedOn('${esc(p).replace(/'/g,"\\'")}')">${esc(p)}</button>`).join('');
+}
+function pickPlayedOn(p){
+  const el=document.getElementById('mConsole');
+  if(el) el.value=p;
+  renderPlatformChips();
+  showToast('🎮 Joué sur : '+p, null, 2000);
 }
 
 // ─── RAFRAÎCHISSEMENT GROUPÉ DEPUIS IGDB ───
@@ -2241,9 +2286,21 @@ async function startBulkIgdb(){
         if(d.genres.length) g.genre=d.genres.slice(0,2).join(', ');
         if(d.franchise) g.franchise=d.franchise;
         if(d.platforms.length){
-          g.releaseConsole=d.platforms[0];
-          const mk=makerOfConsole(d.platforms[0]);
-          if(mk) g.maker=mk;
+          g.platforms=d.platforms.slice();
+          if(d.platforms.length===1){
+            g.releaseConsole=d.platforms[0];
+            const mk=makerOfConsole(d.platforms[0]);
+            if(mk) g.maker=mk;
+          } else {
+            const makers=[...new Set(d.platforms.map(makerOfConsole))];
+            if(makers.length===1 && makers[0]!=='other'){
+              g.releaseConsole=d.platforms.join(', ');
+              g.maker=makers[0];
+            } else {
+              g.releaseConsole='Multi';
+              g.maker='other';
+            }
+          }
         }
         g.updated=Date.now();
         updated++;
@@ -2292,6 +2349,7 @@ function saveGame(){
     maker:document.getElementById('mMaker').value,
     console:document.getElementById('mConsole').value,
     releaseConsole:document.getElementById('mReleaseConsole').value.trim(),
+    platforms:igdbPlatforms.slice(),
     status,
     studio:document.getElementById('mStudio').value.trim(),
     release:document.getElementById('mRelease').value,
