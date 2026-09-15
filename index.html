@@ -1054,7 +1054,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.3';
+const APP_VERSION='v2.3.1';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1521,28 +1521,29 @@ function setSortMode(m,btn){
 // Deduce maker from console name (for library grouping by played-on console)
 function makerOfConsole(consoleName){
   if(!consoleName) return 'other';
-  const cl=consoleName.toLowerCase();
-  // Exact match in maker console lists (sony/nintendo/microsoft only)
+  // Une liste de plateformes n'est pas une console : jeu multiplateforme → tiers
+  if(/[,;]/.test(consoleName)) return 'other';
+  const cl=consoleName.toLowerCase().trim();
   for(const mk of ['sony','nintendo','microsoft']){
     if(MAKERS[mk].consoles.some(c=>c.toLowerCase()===cl)) return mk;
   }
-  // Fuzzy fallback
-  if(/^ps\d|playstation|psp|vita/.test(cl)) return 'sony';
-  if(/switch|wii|gamecube|n64|nes|snes|3ds|game boy|gba|\bds\b/.test(cl)) return 'nintendo';
-  if(/xbox/.test(cl)) return 'microsoft';
+  if(/^ps\d|^playstation|^psp$|^ps vita$/.test(cl)) return 'sony';
+  if(/^switch|^wii|^gamecube|^n64|^nes$|^snes$|^3ds$|^game boy|^gba$|^ds$|^nintendo/.test(cl)) return 'nintendo';
+  if(/^xbox/.test(cl)) return 'microsoft';
   return 'other';
 }
-// Grouping maker: played-on console > release console > game's maker
+// Constructeur de classement : console jouée > constructeur du jeu
 function groupMakerOf(g){
   if(g.console) return makerOfConsole(g.console);
-  if(g.releaseConsole){
-    const m=makerOfConsole(g.releaseConsole);
-    if(m!=='other') return m;
-  }
   return g.maker||'other';
 }
+// Console de classement : uniquement celle sur laquelle tu joues
 function groupConsoleOf(g){
-  return g.console||g.releaseConsole||'Non précisé';
+  if(g.console) return g.console;
+  // Une seule plateforme connue ? on peut l'utiliser sans ambiguïté
+  if(Array.isArray(g.platforms)&&g.platforms.length===1) return g.platforms[0];
+  if(g.releaseConsole&&!/[,;]/.test(g.releaseConsole)) return g.releaseConsole;
+  return 'À préciser';
 }
 
 function hierarchyHTML(list){
@@ -1732,7 +1733,7 @@ function gameCardHTML(g){
     <div class="game-card-info">
     <div class="game-card-title">${esc(g.title)}</div>
     <div class="game-card-meta">
-      ${g.releaseConsole&&g.maker!=='other'?`<span>${esc(g.releaseConsole)}</span>`:''}
+      ${g.releaseConsole&&g.maker!=='other'&&!/[,;]/.test(g.releaseConsole)?`<span>${esc(g.releaseConsole)}</span>`:''}
       ${g.release?`<span>${g.release.slice(0,4)}</span>`:''}
       ${g.studio?`<span>${esc(g.studio)}</span>`:''}
       ${g.genre?`<span>${esc(g.genre)}</span>`:''}
