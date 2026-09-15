@@ -603,7 +603,35 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .stats-hero-grid{grid-template-columns:1fr 1fr;gap:7px}
   .wrap-mosaic{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
   .info-row-label{width:74px}
+
+  /* Cartes compactes : plus de jeux visibles d'un coup */
+  .game-card{padding:9px 11px;gap:10px;align-items:center}
+  .game-cover,.game-cover-ph{width:42px;height:56px}
+  .game-card-title{font-size:13.5px;line-height:1.3}
+  .game-card-meta{font-size:10.5px;gap:6px;margin-bottom:5px;
+    flex-wrap:nowrap;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .game-card-meta .meta-studio,
+  .game-card-meta .meta-genre{display:none}      /* détails réservés à la fiche */
+  .game-card-bottom{gap:5px}
+  .game-card-bottom .opt-badge{display:none}     /* possession / édition : dans la fiche */
+  .status-badge,.detail-badge,.hours-badge{font-size:9.5px;padding:2px 7px}
+  .stars{font-size:10px}
+  .cards-grid{gap:7px}
+  .stamp-card{width:24px;height:24px;font-size:7.5px;top:4px;right:4px}
+  .stamp-card.platinum{font-size:11px}
+
+  /* Calendrier : un mois à l'écran, navigation par balayage */
+  .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .month-nav-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
+    background:var(--bg2);color:var(--text);font-size:22px;line-height:1;cursor:pointer;
+    font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .month-nav-btn:active{background:var(--bg3)}
+  .month-nav-title{flex:1;text-align:center;font-size:16px;font-weight:800;letter-spacing:-.4px}
+  .month-card{padding:14px}
+  .mday{font-size:12.5px}
+  .month-name{font-size:14px}
 }
+@media(min-width:641px){ .month-nav{display:none!important} }
 </style>
 </head>
 <body>
@@ -1120,7 +1148,8 @@ let games = (() => {
     return [];
   }catch{ return []; }
 })();
-let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null;
+let currentView='library', makerFilter='all', statusFilter='all', sortMode='release', panelId=null, modalRating=0, calYear=new Date().getFullYear(), statsYear=null, calMonth=new Date().getMonth();
+function isMobile(){ return window.innerWidth<=640; }
 
 function save(){
   try{ localStorage.setItem(LS,JSON.stringify(games)); }
@@ -1135,7 +1164,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.6-mobile';
+const APP_VERSION='v2.7-mobile';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1539,6 +1568,8 @@ function switchView(v,btn){
   const moreBtn=document.getElementById('mnavMore');
   if(moreBtn) moreBtn.classList.toggle('on', ['paused','done','releases'].includes(v));
   document.getElementById('mainTitle').textContent=VIEW_TITLES[v]||v;
+  // Le calendrier s'ouvre toujours sur le mois courant
+  if(v==='calendar'){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); }
   document.getElementById('searchWrap').style.display=['library','backlog','doing','paused','done'].includes(v)?'':'none';
   renderCurrent();
 }
@@ -1944,17 +1975,17 @@ function gameCardHTML(g){
     <div class="game-card-info">
     <div class="game-card-title">${esc(g.title)}</div>
     <div class="game-card-meta">
-      ${g.releaseConsole&&g.maker!=='other'&&!/[,;]/.test(g.releaseConsole)?`<span>${esc(g.releaseConsole)}</span>`:''}
-      ${g.release?`<span>${g.release.slice(0,4)}</span>`:''}
-      ${g.studio?`<span>${esc(g.studio)}</span>`:''}
-      ${g.genre?`<span>${esc(g.genre)}</span>`:''}
+      ${g.releaseConsole&&g.maker!=='other'&&!/[,;]/.test(g.releaseConsole)?`<span class="meta-console">${esc(g.releaseConsole)}</span>`:''}
+      ${g.release?`<span class="meta-year">${g.release.slice(0,4)}</span>`:''}
+      ${g.studio?`<span class="meta-studio">${esc(g.studio)}</span>`:''}
+      ${g.genre?`<span class="meta-genre">${esc(g.genre)}</span>`:''}
     </div>
     <div class="game-card-bottom">
       <span class="status-badge ${g.status}">${STATUS_LABELS[g.status]}</span>
       ${g.status==='todo'&&g.priority?`<span class="detail-badge priority-${g.priority}">${g.priority==='high'?'🔥 ':''}${PRIORITY_LABELS[g.priority]}</span>`:''}
       ${g.parentId?`<span class="detail-badge dlc">DLC</span>`:''}
-      ${g.edition?`<span class="detail-badge edition">${EDITION_LABELS[g.edition]||g.edition}</span>`:''}
-      ${g.ownership?`<span class="detail-badge ownership">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
+      ${g.edition?`<span class="detail-badge edition opt-badge">${EDITION_LABELS[g.edition]||g.edition}</span>`:''}
+      ${g.ownership?`<span class="detail-badge ownership opt-badge">${OWNERSHIP_LABELS[g.ownership]||g.ownership}</span>`:''}
       ${totalHours(g)?`<span class="hours-badge">🕒 ${totalHours(g)}h</span>`:''}
       ${g.status==='todo'&&g.estHours?`<span class="detail-badge est">⏳ ~${g.estHours}h</span>`:''}
       ${stars}
@@ -2774,7 +2805,12 @@ function renderCalendar(){
     <div class="cal-chip"><div class="cal-chip-val">${yearDone}</div><div class="cal-chip-lbl">Jeux terminés</div></div>
     <div class="cal-chip"><div class="cal-chip-val">${yearHours>0?yearHours+'h':'—'}</div><div class="cal-chip-lbl">Heures logguées</div></div>
   </div>
-  <div class="month-grid">`;
+  <div class="month-nav" id="monthNav" style="display:none">
+    <button class="month-nav-btn" onclick="stepMonth(-1)" aria-label="Mois précédent">‹</button>
+    <div class="month-nav-title" id="monthNavTitle"></div>
+    <button class="month-nav-btn" onclick="stepMonth(1)" aria-label="Mois suivant">›</button>
+  </div>
+  <div class="month-grid" id="monthGrid">`;
 
   // 7 distinct calendar colors, assigned per game (not per maker)
   const CAL_PALETTE=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#6A4C93','#1D3557'];
@@ -2817,7 +2853,9 @@ function renderCalendar(){
     nextCI=ci+1;
   });
 
-  for(let m=0;m<12;m++){
+  const mobileCal=isMobile();
+  const monthsToRender = mobileCal ? [calMonth] : [0,1,2,3,4,5,6,7,8,9,10,11];
+  for(const m of monthsToRender){
     const ms=`${calYear}-${String(m+1).padStart(2,'0')}`;
     const first=new Date(calYear,m,1),last=new Date(calYear,m+1,0);
     const totalDaysMonth=last.getDate();
@@ -2879,7 +2917,45 @@ function renderCalendar(){
   }
   html+=`</div>`;
   document.getElementById('calContent').innerHTML=html;
+  // Navigation mensuelle : visible uniquement sur mobile
+  if(mobileCal){
+    const nav=document.getElementById('monthNav');
+    if(nav){
+      nav.style.display='flex';
+      const tEl=document.getElementById('monthNavTitle');
+      if(tEl) tEl.textContent=MONTHS[calMonth]+' '+calYear;
+    }
+    attachCalendarSwipe();
+  }
   requestAnimationFrame(positionAllBars);
+}
+
+// ── Navigation mois par mois (mobile) ──
+function stepMonth(delta){
+  let m=calMonth+delta;
+  if(m<0){ m=11; calYear--; }
+  else if(m>11){ m=0; calYear++; }
+  calMonth=m;
+  renderCalendar();
+}
+function attachCalendarSwipe(){
+  const grid=document.getElementById('monthGrid');
+  if(!grid||grid.dataset.swipe) return;
+  grid.dataset.swipe='1';
+  let x0=0,y0=0,t0=0,tracking=false;
+  grid.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now(); tracking=true;
+  },{passive:true});
+  grid.addEventListener('touchend',e=>{
+    if(!tracking) return; tracking=false;
+    const tch=e.changedTouches[0];
+    const dx=tch.clientX-x0, dy=tch.clientY-y0, dt=Date.now()-t0;
+    // Geste horizontal franc, pas un défilement vertical
+    if(Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)*1.8 && dt<700){
+      stepMonth(dx<0?1:-1);
+    }
+  },{passive:true});
 }
 
 function positionAllBars(){
@@ -2911,7 +2987,13 @@ function positionAllBars(){
   });
 }
 function setCalYear(y){ calYear=y; renderCalendar(); }
-window.addEventListener('resize',()=>{ if(currentView==='calendar') requestAnimationFrame(positionAllBars); });
+let _wasMobile=isMobile();
+window.addEventListener('resize',()=>{
+  if(currentView!=='calendar') return;
+  const now=isMobile();
+  if(now!==_wasMobile){ _wasMobile=now; renderCalendar(); }   // bascule portrait/paysage
+  else requestAnimationFrame(positionAllBars);
+});
 
 // ─── DAY POPUP ───
 function showDayPopup(ds){
