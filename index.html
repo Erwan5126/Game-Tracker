@@ -1045,7 +1045,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.0-pwa';
+const APP_VERSION='v2.1-refresh';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -2030,9 +2030,21 @@ function openModal(id, tab){
   else { document.getElementById('mParent').value=''; }
   onModalStatusChange();
   clearIgdb();
-  // La recherche IGDB n'a de sens qu'à la création d'un jeu
   const isf=document.getElementById('igdbSearchField');
-  if(isf) isf.style.display=id?'none':'';
+  if(isf){
+    isf.style.display='';
+    igdbFillMode='replace';
+    const hint=document.getElementById('igdbHint');
+    const qEl=document.getElementById('igdbQuery');
+    if(id){
+      hint.textContent="Remplace les infos du jeu par celles d'IGDB. Ton suivi (statut, sessions, note, heures) n'est pas touché.";
+      const g=games.find(x=>x.id===id);
+      if(g&&qEl) qEl.placeholder='Rechercher « '+g.title+' » sur IGDB…';
+    } else {
+      hint.textContent="Remplit jaquette, date de sortie, studio, genre et franchise.";
+      if(qEl) qEl.placeholder='Tape un titre pour remplir automatiquement...';
+    }
+  }
   switchModalTab(tab||'game');
   closePanel();
   document.getElementById('modalOverlay').classList.add('on');
@@ -2045,7 +2057,7 @@ function setModalRating(r){
 }
 // ─── RECHERCHE IGDB (via relais Cloudflare) ───
 const IGDB_RELAY='https://withered-sun-9f78.erwanwagner.workers.dev';
-let igdbTimer=null, igdbLastQuery='', igdbSeq=0;
+let igdbTimer=null, igdbLastQuery='', igdbSeq=0, igdbFillMode='replace';
 
 function onIgdbInput(){
   const q=document.getElementById('igdbQuery').value.trim();
@@ -2134,6 +2146,8 @@ function renderIgdbResults(list){
 function applyIgdb(i){
   const d=window._igdbCache&&window._igdbCache[i];
   if(!d) return;
+  // Ne touche QUE les champs de l'onglet "Infos du jeu".
+  // Le suivi (statut, sessions, heures, note, possession…) est dans l'autre onglet, intact.
   const setIf=(id,val)=>{ const el=document.getElementById(id); if(el&&val) el.value=val; };
   setIf('mTitle', d.name);
   if(d.coverId){ document.getElementById('mCover').value=igdbCoverUrl(d.coverId,'cover_big'); previewCover(); }
@@ -2141,16 +2155,124 @@ function applyIgdb(i){
   setIf('mStudio', d.studio);
   if(d.genres.length) setIf('mGenre', d.genres.slice(0,2).join(', '));
   setIf('mFranchise', d.franchise);
-  // Console de sortie : on propose la première plateforme connue
-  if(d.platforms.length) setIf('mReleaseConsole', d.platforms[0]);
-  // Déduit le constructeur à partir de la plateforme
   if(d.platforms.length){
+    setIf('mReleaseConsole', d.platforms[0]);
     const mk=makerOfConsole(d.platforms[0]);
     const mEl=document.getElementById('mMaker');
     if(mEl&&mk) mEl.value=mk;
   }
   clearIgdb();
   showToast('✅ Infos récupérées depuis IGDB', null, 2500);
+}
+
+// ─── RAFRAÎCHISSEMENT GROUPÉ DEPUIS IGDB ───
+// Écrase les INFOS DU JEU et préserve intégralement le SUIVI.
+let bulkIgdbRunning=false, bulkIgdbAbort=false;
+
+// Champs de suivi : jamais touchés par IGDB
+const TRACKING_FIELDS=['id','created','updated','status','sessions','hours','estHours','rating','note',
+  'ownership','format','completion','priority','console','plannedStart','plannedEnd','parentId','edition'];
+
+function updateBulkIgdbStats(){
+  const el=document.getElementById('bulkIgdbStats');
+  if(!el) return;
+  const incomplete=games.filter(g=>!g.cover||!g.release||!g.studio||!g.genre).length;
+  el.textContent = `${games.length} jeu${games.length>1?'x':''} dans ta bibliothèque`
+    + (incomplete?` · ${incomplete} sans infos complètes.`:'.');
+}
+function bulkLog(msg){
+  const el=document.getElementById('bulkIgdbLog');
+  if(el) el.innerHTML = msg + '<br>' + el.innerHTML;
+}
+function stopBulkIgdb(){ bulkIgdbAbort=true; }
+
+async function igdbLookup(title){
+  const query=`search "${String(title).replace(/"/g,'')}"; fields name,cover.image_id,first_release_date,genres.name,platforms.name,franchises.name,collections.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; limit 5;`;
+  const res=await fetch(IGDB_RELAY,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({endpoint:'games',query})
+  });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  return Array.isArray(data)?data:[];
+}
+// Correspondance exacte du titre en priorité, sinon préfixe, sinon premier résultat
+function pickBestMatch(results, title){
+  if(!results.length) return null;
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const t=norm(title);
+  return results.find(r=>norm(r.name)===t)
+      || results.find(r=>norm(r.name).startsWith(t)||t.startsWith(norm(r.name)))
+      || results[0];
+}
+
+async function startBulkIgdb(){
+  if(bulkIgdbRunning) return;
+  const todo=games.slice();
+  if(!todo.length){ showToast('Aucun jeu dans la bibliothèque.', null, 3000); return; }
+  if(!confirm(
+    `Rafraîchir les infos de ${todo.length} jeu${todo.length>1?'x':''} depuis IGDB ?\n\n`
+    + `SERA REMPLACÉ : titre, jaquette, date de sortie, studio, genre, franchise, console de sortie, constructeur.\n\n`
+    + `SERA CONSERVÉ : statut, sessions, heures, note, commentaire, possession, complétion, priorité, console sur laquelle tu joues.\n\n`
+    + `⚠️ Exporte tes données avant, par précaution.`
+  )) return;
+
+  bulkIgdbRunning=true; bulkIgdbAbort=false;
+  document.getElementById('bulkIgdbBtn').style.display='none';
+  document.getElementById('bulkIgdbStop').style.display='';
+  document.getElementById('bulkIgdbProgress').style.display='';
+  document.getElementById('bulkIgdbLog').innerHTML='';
+
+  let done=0, updated=0, missed=0, renamed=0;
+  for(const g of todo){
+    if(bulkIgdbAbort){ bulkLog('⏹ Arrêté par l\'utilisateur.'); break; }
+    const originalTitle=g.title;
+    try{
+      const results=await igdbLookup(originalTitle);
+      const best=pickBestMatch(results, originalTitle);
+      if(best){
+        const d=igdbExtract(best);
+        // Remplacement des infos du jeu — le suivi n'est jamais touché
+        if(d.name) g.title=d.name;
+        if(d.coverId) g.cover=igdbCoverUrl(d.coverId,'cover_big');
+        if(d.release) g.release=d.release;
+        if(d.studio) g.studio=d.studio;
+        if(d.genres.length) g.genre=d.genres.slice(0,2).join(', ');
+        if(d.franchise) g.franchise=d.franchise;
+        if(d.platforms.length){
+          g.releaseConsole=d.platforms[0];
+          const mk=makerOfConsole(d.platforms[0]);
+          if(mk) g.maker=mk;
+        }
+        g.updated=Date.now();
+        updated++;
+        if(d.name && d.name!==originalTitle){
+          renamed++;
+          bulkLog(`✏️ <strong>${esc(originalTitle)}</strong> → <strong>${esc(d.name)}</strong>`);
+        } else {
+          bulkLog(`✅ ${esc(g.title)}`);
+        }
+      } else {
+        missed++; bulkLog(`⚠️ <strong>${esc(originalTitle)}</strong> — introuvable sur IGDB`);
+      }
+    }catch(e){
+      missed++; bulkLog(`❌ ${esc(originalTitle)} — ${esc(e.message)}`);
+    }
+    done++;
+    const bar=document.getElementById('bulkIgdbBar');
+    if(bar) bar.style.width=Math.round(done/todo.length*100)+'%';
+    await new Promise(r=>setTimeout(r, 300)); // IGDB limite à 4 req/s
+  }
+
+  save();
+  renderCurrent();
+  bulkIgdbRunning=false;
+  const btn=document.getElementById('bulkIgdbBtn'), stop=document.getElementById('bulkIgdbStop');
+  if(btn) btn.style.display='';
+  if(stop) stop.style.display='none';
+  showToast(`✨ ${updated} jeu${updated>1?'x':''} mis à jour${renamed?` · ${renamed} renommé${renamed>1?'s':''}`:''}${missed?` · ${missed} sans résultat`:''}`, null, 7000);
+  updateBulkIgdbStats();
 }
 
 function previewCover(){
@@ -2912,8 +3034,26 @@ function renderStats(){
       <button class="btn-secondary" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">↑ Importer un fichier</button>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px">Exporte un fichier JSON pour sauvegarder ou transférer ta bibliothèque.</div>
+
+    <div class="section-title" style="margin-top:24px">Rafraîchir depuis IGDB</div>
+    <div style="font-size:11.5px;color:var(--text2);line-height:1.6;margin-bottom:10px">
+      Recherche chaque jeu sur IGDB et <strong>remplace ses infos</strong> : titre, jaquette, date de sortie, studio, genre, franchise, console de sortie.<br>
+      <span style="color:var(--text3)">Ton suivi est intégralement préservé : statut, sessions, heures, note, commentaire, possession, complétion, priorité et console sur laquelle tu joues.</span>
+    </div>
+    <div id="bulkIgdbStats" style="font-size:11px;color:var(--text3);margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" id="bulkIgdbBtn" style="font-size:12px;padding:9px 16px" onclick="startBulkIgdb()">✨ Rafraîchir toute la bibliothèque</button>
+      <button class="btn-secondary" id="bulkIgdbStop" style="font-size:12px;padding:9px 16px;display:none" onclick="stopBulkIgdb()">Arrêter</button>
+    </div>
+    <div id="bulkIgdbProgress" style="display:none;margin-top:12px">
+      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+        <div id="bulkIgdbBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6A4C93,#E63946);transition:width .3s"></div>
+      </div>
+      <div id="bulkIgdbLog" style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6;max-height:140px;overflow-y:auto"></div>
+    </div>
   </div>
   `;
+  updateBulkIgdbStats();
 }
 
 // ─── EXPORT / IMPORT ───
