@@ -94,6 +94,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 .maker-section{margin-bottom:32px}
 .maker-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .maker-header.collapsible,.console-header.collapsible{cursor:pointer;user-select:none}
+.maker-drag-handle{font-size:13px;color:var(--text3);cursor:grab;opacity:0;transition:opacity .12s;flex-shrink:0;letter-spacing:-2px}
+.maker-section:hover>.maker-header .maker-drag-handle{opacity:.6}
+.maker-drag-handle:active{cursor:grabbing}
+.maker-section.dragging{opacity:.4}
+@media(hover:none){.maker-drag-handle{opacity:.5}}
 .maker-header.collapsible:hover .maker-name,.console-header.collapsible:hover .console-name{opacity:.7}
 .collapse-chevron{font-size:11px;color:var(--text3);flex-shrink:0;margin-left:4px}
 .maker-bar{width:4px;height:22px;border-radius:2px;flex-shrink:0}
@@ -1054,7 +1059,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.4';
+const APP_VERSION='v2.5';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1575,7 +1580,12 @@ function hierarchyHTML(list){
     byMaker[mk][c].push(g);
   });
   let html='';
-  MAKER_ORDER.filter(mk=>byMaker[mk]).forEach(mk=>{
+  const mkOrdered=[];
+  makerOrder.forEach(m=>{ if(byMaker[m]&&!mkOrdered.includes(m)) mkOrdered.push(m); });
+  MAKER_ORDER.forEach(m=>{ if(byMaker[m]&&!mkOrdered.includes(m)) mkOrdered.push(m); });
+  Object.keys(byMaker).forEach(m=>{ if(!mkOrdered.includes(m)) mkOrdered.push(m); });
+  html+='<div class="maker-list">';
+  mkOrdered.forEach(mk=>{
     const M=MAKERS[mk];
     const consoles=byMaker[mk];
     const makerTotal=Object.values(consoles).reduce((s,a)=>s+a.length,0);
@@ -1589,13 +1599,15 @@ function hierarchyHTML(list){
     M.consoles.forEach(c=>{ if(consoles[c]&&!ordered.includes(c)) ordered.push(c); });
     present.forEach(c=>{ if(!ordered.includes(c)) ordered.push(c); });
     const cOrder=ordered;
-    html+=`<div class="maker-section">
-      <div class="maker-header collapsible" onclick="toggleSection('${mkKey}')">
+    html+=`<div class="maker-section" draggable="true" data-makersec="${mk}"
+        ondragstart="makerDragStart(event)" ondragover="makerDragOver(event)" ondrop="makerDrop(event)" ondragend="makerDragEnd(event)">
+      <div class="maker-header collapsible">
+        <span class="maker-drag-handle" title="Glisser pour réordonner">⠿</span>
         <div class="maker-bar" style="background:${M.color}"></div>
-        <div class="maker-name">${M.label}</div>
-        <div class="maker-count">${makerTotal} jeu${makerTotal>1?'x':''}</div>
-        <div class="maker-line"></div>
-        <span class="collapse-chevron">${mkCollapsed?'▸':'▾'}</span>
+        <div class="maker-name" onclick="toggleSection('${mkKey}')">${M.label}</div>
+        <div class="maker-count" onclick="toggleSection('${mkKey}')">${makerTotal} jeu${makerTotal>1?'x':''}</div>
+        <div class="maker-line" onclick="toggleSection('${mkKey}')"></div>
+        <span class="collapse-chevron" onclick="toggleSection('${mkKey}')">${mkCollapsed?'▸':'▾'}</span>
       </div>
       ${mkCollapsed?'':`<div class="console-list" data-maker="${mk}">`+cOrder.map(c=>{
         const cKey='c:'+mk+':'+c;
@@ -1620,19 +1632,60 @@ function hierarchyHTML(list){
       </div>`;}).join('')+`</div>`}
     </div>`;
   });
+  html+='</div>';
   return html;
+}
+
+// ── Réordonnancement des constructeurs (glisser-déposer, persistant) ──
+let makerOrder=(()=>{try{return JSON.parse(localStorage.getItem('gamelog_maker_order')||'[]');}catch{return [];}})();
+let dragMakerSec=null;
+function makerDragStart(e){
+  const sec=e.target.closest('.maker-section');
+  if(!sec) return;
+  // Ne pas confondre avec le glissement d'une console
+  if(e.target.closest('.console-section')) return;
+  dragMakerSec=sec.dataset.makersec;
+  sec.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function makerDragOver(e){
+  if(!dragMakerSec) return;
+  e.preventDefault();
+  const sec=e.target.closest('.maker-section');
+  if(!sec||sec.dataset.makersec===dragMakerSec) return;
+  const list=sec.parentElement;
+  const dragging=list.querySelector('.maker-section.dragging');
+  if(!dragging) return;
+  const rect=sec.getBoundingClientRect();
+  if(e.clientY>rect.top+rect.height/2) sec.after(dragging); else sec.before(dragging);
+}
+function makerDrop(e){ if(dragMakerSec) e.preventDefault(); }
+function makerDragEnd(e){
+  const sec=e.target.closest('.maker-section');
+  if(sec) sec.classList.remove('dragging');
+  if(dragMakerSec){
+    const list=document.querySelector('.maker-list');
+    if(list){
+      makerOrder=[...list.querySelectorAll('.maker-section')].map(s=>s.dataset.makersec).filter(Boolean);
+      try{localStorage.setItem('gamelog_maker_order',JSON.stringify(makerOrder));}catch{}
+    }
+  }
+  dragMakerSec=null;
 }
 
 // ── Console drag & drop ordering (persisted per maker) ──
 let consoleOrder=(()=>{try{return JSON.parse(localStorage.getItem('gamelog_console_order')||'{}');}catch{return {};}})();
 let dragConsole=null, dragMaker=null;
 function consoleDragStart(e){
+  e.stopPropagation();
   const sec=e.target.closest('.console-section');
   dragConsole=sec.dataset.console; dragMaker=sec.dataset.maker;
   sec.classList.add('dragging');
   e.dataTransfer.effectAllowed='move';
 }
 function consoleDragOver(e){
+  if(!dragConsole) return;
+  e.stopPropagation();
   e.preventDefault();
   const sec=e.target.closest('.console-section');
   if(!sec||sec.dataset.maker!==dragMaker||sec.dataset.console===dragConsole) return;
