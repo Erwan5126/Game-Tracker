@@ -604,21 +604,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   .wrap-mosaic{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
   .info-row-label{width:74px}
 
-  /* Cartes compactes : plus de jeux visibles d'un coup */
-  .game-card{padding:9px 11px;gap:10px;align-items:center}
-  .game-cover,.game-cover-ph{width:42px;height:56px}
-  .game-card-title{font-size:13.5px;line-height:1.3}
-  .game-card-meta{font-size:10.5px;gap:6px;margin-bottom:5px;
-    flex-wrap:nowrap;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  .game-card-meta .meta-studio,
-  .game-card-meta .meta-genre{display:none}      /* détails réservés à la fiche */
-  .game-card-bottom{gap:5px}
-  .game-card-bottom .opt-badge{display:none}     /* possession / édition : dans la fiche */
-  .status-badge,.detail-badge,.hours-badge{font-size:9.5px;padding:2px 7px}
-  .stars{font-size:10px}
-  .cards-grid{gap:7px}
-  .stamp-card{width:24px;height:24px;font-size:7.5px;top:4px;right:4px}
-  .stamp-card.platinum{font-size:11px}
+  /* Grille de jaquettes : 3 jeux par ligne */
+  .cards-grid{grid-template-columns:repeat(3,1fr);gap:9px}
+  .game-card{flex-direction:column;align-items:stretch;padding:0;gap:0;
+    border-left-width:0!important;border-top:3px solid var(--card-accent,var(--border));overflow:hidden}
+  .game-cover,.game-cover-ph{width:100%;height:auto;aspect-ratio:3/4;border-radius:0;font-size:20px}
+  .game-card-info{padding:6px 7px 7px;min-width:0;width:100%}
+  .game-card-title{font-size:11px;line-height:1.25;font-weight:700;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+  .game-card-meta{display:none}                       /* détails dans la fiche */
+  .game-card-bottom{gap:3px;margin-top:4px;flex-wrap:wrap;align-items:center}
+  .game-card-bottom .opt-badge,
+  .game-card-bottom .hours-badge{display:none}
+  .status-badge{font-size:8.5px;padding:2px 6px;border-radius:5px}
+  .detail-badge{font-size:8.5px;padding:2px 5px}
+  .stars{font-size:8.5px;margin-left:auto}
+  .stamp-card{width:22px;height:22px;font-size:7px;top:4px;right:4px}
+  .stamp-card.platinum{font-size:10px}
 
   /* Calendrier : un mois à l'écran, navigation par balayage */
   .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -1164,7 +1166,7 @@ function save(){
 //  3. intervalle minimum entre écritures (anti-rafale)
 //  4. version visible pour repérer un appareil "zombie" (vieux code en cache)
 //  5. bouton de réinitialisation locale (sortie de crise)
-const APP_VERSION='v2.7-mobile';
+const APP_VERSION='v2.8-mobile';
 let fbApp=null, fbAuth=null, fbDb=null, fbUser=null, fbReady=false;
 let autoSyncTimer=null, syncing=false, firstSyncDone=false;
 let lastPushHash='', lastPushAt=0;
@@ -1969,7 +1971,7 @@ function gameCardHTML(g){
   let stars='<div class="stars-mini">';
   for(let i=1;i<=5;i++) stars+=`<span class="star-mini ${i<=(g.rating||0)?'on':''}">★</span>`;
   stars+='</div>';
-  return `<div class="game-card" onclick="openPanel('${g.id}')" style="border-left:4px solid ${makerOf(g).color}">
+  return `<div class="game-card" onclick="openPanel('${g.id}')" style="--card-accent:${makerOf(g).color};border-left:4px solid ${makerOf(g).color}">
     ${g.completion==='platinum'?'<div class="stamp stamp-card platinum">🏆</div>':g.completion==='hundred'?'<div class="stamp stamp-card hundred">100%</div>':''}
     ${g.cover?`<img class="game-cover" src="${esc(g.cover)}" alt="" onerror="this.outerHTML='<div class=game-cover-ph>🎮</div>'">`:`<div class="game-cover-ph">🎮</div>`}
     <div class="game-card-info">
